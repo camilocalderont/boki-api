@@ -1,9 +1,9 @@
 
 import { createBot } from '@builderbot/bot'
 import { PostgreSQLAdapter as Database } from '@builderbot/database-postgres'
-import { provider } from './provider';
-import { config } from './config';
-import templates from './templates';
+import { provider } from './bot/provider';
+import { config } from './bot/config';
+import templates from './bot/templates';
 
 const PORT = config.PORT
 

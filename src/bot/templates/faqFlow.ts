@@ -1,6 +1,6 @@
 import { addKeyword, EVENTS } from "@builderbot/bot";
-import aiServices from "~/services/llm/aiServices";
-import { config } from "~/config";
+import aiServices from "~/bot/services/llm/aiServices";
+import { config } from "~/bot/config";
 import path from "path";
 import fs, { stat} from "fs";
 

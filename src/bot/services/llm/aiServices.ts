@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { config } from "~/config";
+import { config } from "~/bot/config";
 
 class aiServices {
     private static apikey:string;
