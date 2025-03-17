@@ -11,16 +11,18 @@
     ],
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
-      "ecmaVersion": "latest",
+      "ecmaVersion": 2020,
       "sourceType": "module"
     },
     "plugins": ["@typescript-eslint", "builderbot"],
+    "ignorePatterns": ["dist/**/*", "node_modules/**/*"],
     "rules": {
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-unused-vars": "off",
       "@typescript-eslint/ban-ts-comment": "off",
       "@typescript-eslint/ban-types": "off",
+      "no-redeclare": "off",
+      "no-cond-assign": "off",
       "no-unsafe-optional-chaining": "off"
     }
   }
-  

@@ -19,14 +19,42 @@
 </p>
 
 
-## Getting Started
+## Configuración Inicial
 
-With this library, you can build automated conversation flows agnostic to the WhatsApp provider, set up automated responses for frequently asked questions, receive and respond to messages automatically, and track interactions with customers. Additionally, you can easily set up triggers to expand functionalities limitlessly.
+1. Asegúrate de tener PostgreSQL instalado y corriendo en tu máquina.
 
-```
-npm create builderbot@latest
-```
+2. Crea un archivo `.env` basado en el `.env.example`:
+   ```bash
+   cp .env.example .env
+   ```
 
+3. Configura las variables de entorno en el archivo `.env`:
+   ```env
+   POSTGRES_DB_HOST=localhost
+   POSTGRES_DB_USER=tu_usuario
+   POSTGRES_DB_NAME=tu_base_de_datos
+   POSTGRES_DB_PASSWORD=tu_contraseña
+   POSTGRES_DB_PORT=5432
+   ```
+
+4. Ejecuta el script de configuración que instalará las dependencias, ejecutará las migraciones y compilará el proyecto:
+   ```bash
+   npm run setup
+   ```
+
+5. Inicia el proyecto:
+   ```bash
+   npm run dev
+   ```
+
+## Scripts Disponibles
+
+- `npm run dev`: Inicia el proyecto en modo desarrollo
+- `npm run build`: Compila el proyecto
+- `npm run start`: Inicia el proyecto en modo producción
+- `npm run migration:generate`: Genera una nueva migración
+- `npm run migration:run`: Ejecuta las migraciones pendientes
+- `npm run migration:revert`: Revierte la última migración
 
 ## Documentation
 

@@ -1,83 +1,103 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { ClientRepository } from '../repository/client.repository';
-import { CreateClientDto } from '../schemas/create-client.schema';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { ClientEntity } from '../entities/client.entity';
+import { CreateClientDto } from '../schemas/create-client.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class ClientService {
-  constructor(private readonly clientRepository: ClientRepository) {}
+    constructor(
+        @InjectRepository(ClientEntity)
+        private readonly clientRepository: Repository<ClientEntity>
+    ) {}
 
-  async create(createClientDto: CreateClientDto): Promise<ClientEntity> {
-    const existingClient = await this.clientRepository.findByEmail(createClientDto.VcEmail);
-    if (existingClient) {
-      throw new ConflictException('Email already exists');
+    async create(createClientDto: CreateClientDto): Promise<ClientEntity> {
+        const existingClient = await this.clientRepository.findOne({
+            where: { VcEmail: createClientDto.VcEmail }
+        });
+
+        if (existingClient) {
+            throw new ConflictException('El email ya existe en el sistema');
+        }
+
+        const hashedPassword = await bcrypt.hash(createClientDto.VcPassword, 10);
+        const client = this.clientRepository.create({
+            ...createClientDto,
+            VcPassword: hashedPassword
+        });
+
+        return this.clientRepository.save(client);
     }
 
-    const hashedPassword = await bcrypt.hash(createClientDto.VcPassword, 10);
-    const clientWithHashedPassword = {
-      ...createClientDto,
-      VcPassword: hashedPassword,
-    };
-    return await this.clientRepository.create(clientWithHashedPassword);
-  }
-
-  async findAll(): Promise<ClientEntity[]> {
-    return await this.clientRepository.findAll();
-  }
-
-  async findOne(id: number): Promise<ClientEntity> {
-    const client = await this.clientRepository.findOne(id);
-    if (!client) {
-      throw new NotFoundException(`Client with ID ${id} not found`);
-    }
-    return client;
-  }
-
-  async findByEmail(email: string): Promise<ClientEntity> {
-    const client = await this.clientRepository.findByEmail(email);
-    if (!client) {
-      throw new NotFoundException(`Client with email ${email} not found`);
-    }
-    return client;
-  }
-
-  async validateClient(email: string, password: string): Promise<ClientEntity> {
-    const client = await this.clientRepository.findByEmail(email);
-    if (!client) {
-      throw new NotFoundException('Invalid credentials');
+    async findAll(): Promise<ClientEntity[]> {
+        return this.clientRepository.find();
     }
 
-    const isPasswordValid = await bcrypt.compare(password, client.VcPassword);
-    if (!isPasswordValid) {
-      throw new NotFoundException('Invalid credentials');
+    async findOne(Id: number): Promise<ClientEntity> {
+        const client = await this.clientRepository.findOne({
+            where: { Id }
+        });
+
+        if (!client) {
+            throw new NotFoundException('Cliente no encontrado');
+        }
+
+        return client;
     }
 
-    return client;
-  }
+    async findByEmail(email: string): Promise<ClientEntity> {
+        const client = await this.clientRepository.findOne({
+            where: { VcEmail: email }
+        });
 
-  async update(id: number, updateClientDto: Partial<CreateClientDto>): Promise<ClientEntity> {
-    const client = await this.findOne(id);
-    
-    if (updateClientDto.VcEmail && updateClientDto.VcEmail !== client.VcEmail) {
-      const existingClient = await this.clientRepository.findByEmail(updateClientDto.VcEmail);
-      if (existingClient) {
-        throw new ConflictException('Email already exists');
-      }
+        if (!client) {
+            throw new NotFoundException('Cliente no encontrado');
+        }
+
+        return client;
     }
 
-    if (updateClientDto.VcPassword) {
-      updateClientDto.VcPassword = await bcrypt.hash(updateClientDto.VcPassword, 10);
+    async validateClient(email: string, password: string): Promise<ClientEntity> {
+        const client = await this.clientRepository.findOne({
+            where: { VcEmail: email }
+        });
+
+        if (!client) {
+            throw new NotFoundException('Credenciales inválidas');
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, client.VcPassword);
+        if (!isPasswordValid) {
+            throw new NotFoundException('Credenciales inválidas');
+        }
+
+        return client;
     }
 
-    return await this.clientRepository.update(id, updateClientDto);
-  }
+    async update(id: number, updateClientDto: Partial<CreateClientDto>): Promise<ClientEntity> {
+        const client = await this.findOne(id);
 
-  async delete(id: number): Promise<void> {
-    const client = await this.findOne(id);
-    if (!client) {
-      throw new NotFoundException(`Client with ID ${id} not found`);
+        if (updateClientDto.VcEmail && updateClientDto.VcEmail !== client.VcEmail) {
+            const existingClient = await this.clientRepository.findOne({
+                where: { VcEmail: updateClientDto.VcEmail }
+            });
+
+            if (existingClient) {
+                throw new ConflictException('El email ya existe en el sistema');
+            }
+        }
+
+        if (updateClientDto.VcPassword) {
+            updateClientDto.VcPassword = await bcrypt.hash(updateClientDto.VcPassword, 10);
+        }
+
+        Object.assign(client, updateClientDto);
+        return this.clientRepository.save(client);
     }
-    await this.clientRepository.delete(id);
-  }
+
+    async remove(id: number): Promise<void> {
+        const client = await this.findOne(id);
+        await this.clientRepository.remove(client);
+    }
 }

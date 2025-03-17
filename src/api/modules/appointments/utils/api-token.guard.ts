@@ -9,7 +9,7 @@ export class ApiTokenGuard implements CanActivate {
     const token = request.headers['x-api-token'];
 
     if (!token || token !== config.JWT_SECRET) {
-      throw new UnauthorizedException('Invalid API token');
+      throw new UnauthorizedException('Token de API inválido');
     }
 
     return true;
