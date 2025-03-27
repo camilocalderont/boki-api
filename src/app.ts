@@ -3,6 +3,7 @@ import { createBot } from '@builderbot/bot';
 import { PostgreSQLAdapter as Database } from '@builderbot/database-postgres';
 import { provider } from './bot/provider';
 import { config } from './bot/config';
+import { configApi } from './api/config';
 import templates from './bot/templates';
 
 import { NestFactory } from '@nestjs/core';
@@ -36,8 +37,8 @@ async function main() {
     // console.log(`Bot corriendo en el puerto ${BOT_PORT}`);
 
     const app = await NestFactory.create(AppModule);
-    
-    // Habilitar CORS
+
+    app.setGlobalPrefix(`api/v${configApi.VERSION}`);
     app.enableCors();
     
     // Configurar pipes globales

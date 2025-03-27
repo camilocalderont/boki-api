@@ -6,9 +6,11 @@ import { ClientRepository } from './repositories/client.repository';
 import { ClientEntity } from './entities/client.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ClientEntity])],
+  imports: [
+    TypeOrmModule.forFeature([ClientEntity]), // Repositorio de ClientEntity
+  ],
   controllers: [ClientController],
   providers: [ClientService, ClientRepository],
-  exports: [ClientService],
+  exports: [ClientService], // Si otro módulo necesita usar ClientService
 })
 export class ClientModule {}

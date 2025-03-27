@@ -1,24 +1,33 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ClientEntity } from './appointments/client/entities/client.entity';
-import { ClientController } from './appointments/client/controllers/client.controller';
-import { ClientService } from './appointments/client/services/client.service';
 import { AppDataSource } from './database/data-source';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core'
+
+// Importas tu ClientModule
+import { ClientModule } from './appointments/client/client.module';
+
+// Quizá ubiques ApiTokenGuard de manera global, si así lo deseas
 import { ApiTokenGuard } from './appointments/utils/api-token.guard';
 
 @Module({
   imports: [
+    // Config global
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    // Conexión TypeORM principal (no hace falta forFeature aquí)
     TypeOrmModule.forRoot(AppDataSource.options),
-    TypeOrmModule.forFeature([ClientEntity]),
+
+    // Ahora importa ClientModule, que ya tiene su controlador y servicio
+    ClientModule,
   ],
-  controllers: [ClientController],
+  controllers: [],
   providers: [
-    ClientService,
-    ApiTokenGuard
+    {
+      provide: APP_GUARD,
+      useClass: ApiTokenGuard,
+    },
   ],
 })
 export class AppModule {}

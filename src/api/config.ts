@@ -2,7 +2,7 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-export const config = {
+export const configApi = {
     // Database Configuration
     POSTGRES_DB_HOST: process.env.POSTGRES_DB_HOST,
     POSTGRES_DB_PORT: process.env.POSTGRES_DB_PORT,
