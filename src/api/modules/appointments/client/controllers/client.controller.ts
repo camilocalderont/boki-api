@@ -1,16 +1,19 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, HttpCode, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, HttpCode, ParseIntPipe, Inject } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiSecurity } from '@nestjs/swagger';
 import { ClientService } from '../services/client.service';
 import { CreateClientDto } from '../schemas/create-client.dto';
 import { ClientEntity } from '../entities/client.entity';
 
 @ApiTags('Clientes')
-// Si deseas que toda la documentación Swagger muestre que requiere x-api-token,
-// puedes ponerlo a nivel de clase:
 @ApiSecurity('x-api-token')
 @Controller('clients')
 export class ClientController {
-  constructor(private readonly clientService: ClientService) {}
+  constructor(
+    @Inject(ClientService)
+    private clientService: ClientService
+  ) {
+    console.log('ClientController inicializado, clientService:', !!this.clientService);
+  }
 
   @Post()
   @ApiOperation({ summary: 'Crear nuevo cliente' })
@@ -19,6 +22,7 @@ export class ClientController {
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   @ApiResponse({ status: 409, description: 'Email duplicado' })
   async create(@Body() createClientDto: CreateClientDto): Promise<ClientEntity> {
+    console.log('Controller - Recibiendo petición create, clientService existe:', !!this.clientService);
     return this.clientService.create(createClientDto);
   }
 
