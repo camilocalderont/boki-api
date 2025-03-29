@@ -486,6 +486,7 @@ export class BotService implements OnModuleInit {
 }
 ```
 
+
 ## Conclusiones y Mejores Prácticas
 
 1. **Principio de responsabilidad única**: Cada módulo, servicio y controlador tiene una responsabilidad clara y específica.
@@ -503,5 +504,10 @@ export class BotService implements OnModuleInit {
 7. **Integración bot-API**: Ambos componentes comparten la misma base de código, lo que facilita la comunicación y el uso de servicios comunes.
 
 8. **Escalabilidad**: La estructura permite añadir nuevos módulos y funcionalidades sin afectar las existentes.
+
+9. **Reglas al escribir código**
+- Los DTO deben estar libres de lógica de validación y especificación de swagger.
+- Cada entidad debe tener su propio archivo de esquema de validación.
+
 
 Esta arquitectura ofrece un equilibrio entre flexibilidad y estructura, permitiendo que el proyecto crezca de manera organizada sin caer en excesiva complejidad.
