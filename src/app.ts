@@ -12,12 +12,11 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { initializeDatabase } from './api/modules/database/data-source';
 
-const BOT_PORT = config.PORT || 3001; 
+const BOT_PORT = config.PORT || 3001;
 const API_PORT = process.env.API_PORT || 3000;
 
 async function main() {
   try {
-    // Inicializar la base de datos y ejecutar migraciones si es necesario
     await initializeDatabase();
 
     const adapterDB = new Database({
@@ -40,8 +39,6 @@ async function main() {
 
     app.setGlobalPrefix(`api/v${configApi.VERSION}`);
     app.enableCors();
-    
-    // Configurar pipes globales
     app.useGlobalPipes(new ValidationPipe({
       transform: true,
       whitelist: true,
@@ -50,13 +47,11 @@ async function main() {
 
     const swaggerConfig = new DocumentBuilder()
       .setTitle('BokiBot API')
-      .setDescription('API para la gestión de clientes y citas de BokiBot')
-      .setVersion('1.0')
-      .addApiKey({ 
+      .addApiKey({
         type: 'apiKey',
         name: 'x-api-token',
         in: 'header',
-        description: 'Token de autenticación para la API'
+        description: 'Authentication token for the API'
       }, 'x-api-token')
       .build();
 
@@ -71,11 +66,14 @@ async function main() {
     SwaggerModule.setup('api-docs', app, document);
 
     await app.listen(+API_PORT);
-    console.log(`NestJS corriendo en el puerto ${API_PORT}`);
-    console.log(`Swagger UI disponible en http://localhost:${API_PORT}/api-docs`);
+    console.log(`NestJS running on the port ${API_PORT}`);
+    console.log(`Swagger UI available in http://localhost:${API_PORT}/api-docs`);
   } catch (error) {
-    console.error('Error al iniciar la aplicación:', error);
-    process.exit(1);
+    const errorCode = 1001;
+    const customErrorMessage = 'A critical error occurred while starting the application';
+    console.error(`[${customErrorMessage}] (Code: ${errorCode}) =>`, error.message);
+    console.error(error.stack);
+    process.exit(errorCode);
   }
 }
 
