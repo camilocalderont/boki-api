@@ -4,11 +4,10 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 
 import { AppDataSource } from './database/data-source';
-import { ClientModule } from './appointments/client/client.module';
-import { ApiTokenGuard } from './appointments/utils/api-token.guard';
 
-import {
-  LoggingReportService, AllExceptionsFilter,} from './appointments/utils/loggingReport.service';
+import { LoggingReportService, AllExceptionsFilter} from './shared/utils/loggingReport.service';
+import { ClientModule } from './modules/client/client.module';
+import { ApiTokenGuard } from './shared/utils/api-token.guard';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
