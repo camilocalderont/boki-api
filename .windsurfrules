@@ -1,1 +1,68 @@
-prueba
+# .windsurfrules
+
+general:
+  language: "es"                     # Lenguaje predeterminado: Español.
+  tone: "formal"                     # Tono formal y profesional.
+  style: "conciso-y-detallado"       # Respuestas técnicas, precisas y con el nivel de detalle requerido.
+  maxResponseLength: 1200            # Límite de caracteres o palabras para mantener respuestas enfocadas.
+
+project:
+  name: "BokiBot"                   # Nombre del proyecto.
+  framework: "NestJS"                # Framework principal.
+  architecture: "Clean Architecture" # Principio de separación de responsabilidades.
+  modules:
+    - api
+    - bot
+    - users
+    - appointments
+    - shared
+
+rest:
+  namingConvention: "plural"         # Uso de nombres en plural para los recursos (e.g., /users).
+  urlLowercase: true                 # Todas las URLs en minúsculas.
+  versioning: true                   # Versionado de API (ej: /api/v1/).
+  httpMethods:
+    - GET
+    - POST
+    - PUT
+    - DELETE
+  guidelines:
+    - "Evitar verbos en las rutas"
+    - "Usar rutas jerárquicas para relaciones entre recursos"
+    - "Implementar respuestas en formato JSON"
+    - "Utilizar códigos de estado HTTP correctamente (200, 201, 204, 400, 401, 403, 404, 500)"
+  security:
+    https: true                    # Obligatorio usar HTTPS.
+    authentication: "JWT"          # Uso de tokens JWT para autenticación.
+    rbac: true                     # Control de acceso basado en roles.
+
+validation:
+  library: "Joi"                   # Se utiliza Joi para validación de DTOs.
+  options:
+    abortEarly: false              # Mostrar todos los errores de validación.
+    transform: true                # Transformación automática de DTOs.
+
+exceptions:
+  useCustomExceptions: true        # Se utilizan excepciones personalizadas (e.g., NotFoundException, ApplicationException).
+  globalFilters: true              # Implementar filtros globales para el manejo estandarizado de errores.
+  examples:
+    - "NotFoundException: 'Usuario no encontrado con id {id}'"
+    - "ApplicationException: 'Error interno de la aplicación'"
+
+bot:
+  integration:
+    method: "dependencyInjection"  # Inyección de dependencias para la integración entre API y bot.
+    provider: "WhatsApp Meta (@builderbot/bot)" # Proveedor utilizado para la conexión con WhatsApp.
+  flows:
+    default: "appointmentFlow"     # Flujo principal configurado para gestionar citas y otras interacciones.
+  notifications: true              # Habilitar notificaciones personalizadas a través del bot.
+
+ai:
+  personalization:
+    adaptResponses: true           # Las respuestas deben adaptarse a las reglas de negocio.
+    includeContext: true           # Incluir contexto del proyecto y lineamientos RESTful.
+  templates: true                  # Uso de plantillas predefinidas para flujos de conversación.
+
+logging:
+  level: "debug"                   # Nivel de log recomendado para desarrollo.
+  format: "json"                   # Formato JSON para una mejor integración con sistemas de monitoreo.
