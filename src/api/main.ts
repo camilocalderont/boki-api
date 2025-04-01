@@ -3,6 +3,9 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { configApi } from './config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ResponseInterceptor } from './shared/utils/response.interceptor';
+import { HttpExceptionFilter, AllExceptionsFilter } from './shared/utils/http-exception.filter';
+
 const API_PORT = process.env.API_PORT || 3000;
 async function bootstrapApi() {
 
@@ -15,6 +18,10 @@ async function bootstrapApi() {
         forbidNonWhitelisted: true,
         transformOptions: { enableImplicitConversion: true },
     }));
+
+    // Aplicar interceptor de respuesta y filtros de excepciones globales
+    app.useGlobalInterceptors(new ResponseInterceptor());
+    app.useGlobalFilters(new HttpExceptionFilter(), new AllExceptionsFilter());
 
     app.setGlobalPrefix(`api/v${configApi.VERSION}`);
     app.enableCors();

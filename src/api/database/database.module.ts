@@ -1,9 +1,8 @@
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { join } from 'path';
-import { ClientEntity } from '../appointments/client/entities/client.entity';
+import { ClientEntity } from '../modules/client/entities/client.entity';
 
-// Aquí mismo, si quieres, puedes cargar dotenv, o ya lo puedes haber hecho antes:
 import * as dotenv from 'dotenv';
 dotenv.config();
 

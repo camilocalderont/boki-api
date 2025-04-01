@@ -8,7 +8,7 @@ export class JoiValidationPipe implements PipeTransform {
   transform(value: any) {
     const { error, value: validatedValue } = this.schema.validate(value, {
       abortEarly: false,
-      stripUnknown: true, // Equivalente a whitelist
+      stripUnknown: true,
     });
 
     if (error) {
@@ -23,7 +23,7 @@ export class JoiValidationPipe implements PipeTransform {
         data: null,
         statusType: 'ERROR',
         statusCode: 400,
-        statusMessage: 'Error de validación en los datos de entrada',
+        statusMessage: 'Validation error in input data',
         errors: errorMessages
       });
     }
