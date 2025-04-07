@@ -7,6 +7,7 @@ import { AppDataSource } from './database/database.module';
 import { ClientModule } from './modules/client/client.module';
 import { CompanyModule } from './modules/company/company.module';
 import { CompanyBranchModule } from './modules/companyBranch/companyBranch.module';
+import { ProfessionalModule } from './modules/professional/professional.module';
 import { ApiTokenGuard } from './shared/utils/api-token.guard';
 
 @Module({
@@ -16,6 +17,7 @@ import { ApiTokenGuard } from './shared/utils/api-token.guard';
     ClientModule,
     CompanyModule,
     CompanyBranchModule,
+    ProfessionalModule,
   ],
   controllers: [],
   providers: [
