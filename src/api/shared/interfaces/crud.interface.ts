@@ -1,15 +1,15 @@
-export interface ICrudRepository<T> {
-  create(data: any): Promise<T>;
-  findAll(filters?: any): Promise<T[]>;
+export interface ICrudRepository<T, CreateDto = any, UpdateDto = any> {
+  create(data: CreateDto): Promise<T>;
+  findAll(filters?: Record<string, any>): Promise<T[]>;
   findOne(id: number): Promise<T | null>;
-  update(id: number, data: Partial<T>): Promise<T>;
+  update(id: number, data: UpdateDto): Promise<T>;
   remove(id: number): Promise<void>;
 }
 
-export interface ICrudService<T> {
-  create(createDto: any): Promise<T>;
-  findAll(filters?: any): Promise<T[]>;
+export interface ICrudService<T, CreateDto = any, UpdateDto = any> {
+  create(createDto: CreateDto): Promise<T>;
+  findAll(filters?: Record<string, any>): Promise<T[]>;
   findOne(id: number): Promise<T>;
-  update(id: number, updateDto: Partial<any>): Promise<T>;
+  update(id: number, updateDto: UpdateDto): Promise<T>;
   remove(id: number): Promise<void>;
 }

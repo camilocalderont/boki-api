@@ -3,11 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ClientEntity } from '../entities/client.entity';
 import { CreateClientDto } from '../dto/clientCreate.dto';
+import { UpdateClientDto } from '../dto/clientUpdate.dto';
 import * as bcrypt from 'bcrypt';
 import { BaseCrudService } from '../../../shared/services/crud.services';
 
 @Injectable()
-export class ClientService extends BaseCrudService<ClientEntity> {
+export class ClientService extends BaseCrudService<ClientEntity, CreateClientDto, UpdateClientDto> {
     constructor(
         @InjectRepository(ClientEntity)
         private readonly clientRepository: Repository<ClientEntity>
@@ -15,31 +16,90 @@ export class ClientService extends BaseCrudService<ClientEntity> {
         super(clientRepository);
     }
 
+    protected async validateCreate(createClientDto: CreateClientDto): Promise<void> {
+        const existingClient = await this.clientRepository.findOne({
+            where: { VcEmail: createClientDto.VcEmail }
+        });
+
+        if (existingClient) {
+            throw new ConflictException('Email already exists in the system');
+        }
+
+    }
+
+    protected async prepareCreateData(createClientDto: CreateClientDto): Promise<Partial<ClientEntity>> {
+        const hashedPassword = await bcrypt.hash(createClientDto.VcPassword, 10);
+
+        return {
+            ...createClientDto,
+            VcPassword: hashedPassword
+        };
+    }
+
     async create(createClientDto: CreateClientDto): Promise<ClientEntity> {
         try {
-            if (!createClientDto.VcPassword) {
-                throw new BadRequestException('Password is required');
+            await this.validateCreate(createClientDto);
+            
+            const preparedData = await this.prepareCreateData(createClientDto);
+            const entity = this.clientRepository.create(preparedData as any);
+            const savedEntity = await this.clientRepository.save(entity as any);
+            
+            await this.afterCreate(savedEntity as ClientEntity);
+            
+            return savedEntity;
+        } catch (error) {
+            if (error instanceof BadRequestException ||
+                error instanceof ConflictException) {
+                throw error;
             }
 
-            const existingClient = await this.clientRepository.findOne({
-                where: { VcEmail: createClientDto.VcEmail }
-            });
-
-            if (existingClient) {
-                throw new ConflictException('Email already exists in the system');
+            if (error.code === '23505') {
+                throw new ConflictException('A client with this data already exists');
             }
 
-            const hashedPassword = await bcrypt.hash(createClientDto.VcPassword, 10);
+            console.error('Error in create:', error);
+            throw error;
+        }
+    }
+
+    protected async validateUpdate(id: number, updateClientDto: UpdateClientDto): Promise<void> {
+        try {
+            const client = await this.findOne(id);
             
-            const clientData = {
-                ...createClientDto,
-                VcPassword: hashedPassword
-            };
-            
-            return await super.create(clientData);
+            if (updateClientDto.VcEmail && updateClientDto.VcEmail !== client.VcEmail) {
+                const existingClient = await this.clientRepository.findOne({
+                    where: { VcEmail: updateClientDto.VcEmail }
+                });
+
+                if (existingClient) {
+                    throw new ConflictException('The email already exists in the system');
+                }
+            }
+        } catch (error) {
+            if (error instanceof NotFoundException) {
+                throw error;
+            }
+            throw new BadRequestException(`Error validating client with ID ${id}: ${error.message}`);
+        }
+    }
+
+    protected async prepareUpdateData(entity: ClientEntity, updateClientDto: UpdateClientDto): Promise<Partial<ClientEntity>> {
+        const preparedData = { ...updateClientDto };
+        
+        if (preparedData.VcPassword) {
+            preparedData.VcPassword = await bcrypt.hash(preparedData.VcPassword, 10);
+        }
+        
+        return preparedData;
+    }
+    
+    async update(id: number, updateClientDto: UpdateClientDto): Promise<ClientEntity> {
+        try {
+            return await super.update(id, updateClientDto);
         } catch (error) {
             if (error instanceof BadRequestException || 
-                error instanceof ConflictException) {
+                error instanceof ConflictException ||
+                error instanceof NotFoundException) {
                 throw error;
             }
             
@@ -47,32 +107,6 @@ export class ClientService extends BaseCrudService<ClientEntity> {
                 throw new ConflictException('A client with this data already exists');
             }
             
-            console.error('Error in create:', error);
-            throw error;
-        }
-    }
-
-    async update(id: number, updateClientDto: Partial<CreateClientDto>): Promise<ClientEntity> {
-        try {
-            const client = await this.findOne(id);
-
-            if (updateClientDto.VcEmail && updateClientDto.VcEmail !== client.VcEmail) {
-                const existingClient = await this.clientRepository.findOne({
-                    where: { VcEmail: updateClientDto.VcEmail }
-                });
-
-                if (existingClient) {
-                    throw new ConflictException('Email already exists in the system');
-                }
-            }
-
-            if (updateClientDto.VcPassword) {
-                updateClientDto.VcPassword = await bcrypt.hash(updateClientDto.VcPassword, 10);
-            }
-
-            Object.assign(client, updateClientDto);
-            return await this.clientRepository.save(client);
-        } catch (error) {
             console.error('Error in update:', error);
             throw error;
         }

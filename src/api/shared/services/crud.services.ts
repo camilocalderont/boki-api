@@ -1,22 +1,34 @@
 import { NotFoundException, ConflictException, BadRequestException, Injectable } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { Repository, DeepPartial } from 'typeorm';
 import { ICrudService } from '../interfaces/crud.interface';
 
 @Injectable()
-export abstract class BaseCrudService<T extends { Id?: number }> implements ICrudService<T> {
-  constructor(protected readonly repository: Repository<T>) {}
+export abstract class BaseCrudService<T extends { Id?: number }, CreateDto = any, UpdateDto = any> implements ICrudService<T, CreateDto, UpdateDto> {
+  constructor(protected readonly repository: Repository<T>) { }
 
-  async create(createDto: any): Promise<T> {
+  async create(createDto: CreateDto): Promise<T> {
     try {
-      const entity = this.repository.create(createDto);
-      return await this.repository.save(entity as any);
+      await this.validateCreate(createDto);
+
+      const entity = this.repository.create(createDto as unknown as DeepPartial<T>);
+      const savedEntity = await this.repository.save(entity as DeepPartial<T>);
+
+      await this.afterCreate(savedEntity as T);
+
+      return savedEntity;
     } catch (error) {
       console.error(`Error in create:`, error);
       throw error;
     }
   }
 
-  async findAll(filters?: any): Promise<T[]> {
+  protected async validateCreate(createDto: CreateDto): Promise<void> {
+  }
+
+  protected async afterCreate(entity: T): Promise<void> {
+  }
+
+  async findAll(filters?: Record<string, any>): Promise<T[]> {
     try {
       return await this.repository.find(filters ? { where: filters } : {});
     } catch (error) {
@@ -38,21 +50,41 @@ export abstract class BaseCrudService<T extends { Id?: number }> implements ICru
     }
   }
 
-  async update(id: number, updateDto: Partial<any>): Promise<T> {
+  async update(id: number, updateDto: UpdateDto): Promise<T> {
     try {
+      await this.validateUpdate(id, updateDto);
+
       const entity = await this.findOne(id);
-      Object.assign(entity, updateDto);
-      return await this.repository.save(entity as any);
+
+      const preparedData = await this.prepareUpdateData(entity, updateDto);
+
+      Object.assign(entity, preparedData as unknown as DeepPartial<T>);
+
+      const updatedEntity = await this.repository.save(entity as DeepPartial<T>);
+
+      await this.afterUpdate(updatedEntity);
+
+      return updatedEntity;
     } catch (error) {
       console.error(`Error in update:`, error);
       throw error;
     }
   }
 
+  protected async validateUpdate(id: number, updateDto: UpdateDto): Promise<void> {
+  }
+
+  protected async prepareUpdateData(entity: T, updateDto: UpdateDto): Promise<Partial<T> | UpdateDto> {
+    return updateDto;
+  }
+
+  protected async afterUpdate(entity: T): Promise<void> {
+  }
+
   async remove(id: number): Promise<void> {
     try {
       const entity = await this.findOne(id);
-      await this.repository.remove(entity as any);
+      await this.repository.remove(entity);
     } catch (error) {
       console.error(`Error in remove:`, error);
       throw error;
