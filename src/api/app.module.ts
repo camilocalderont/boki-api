@@ -8,6 +8,7 @@ import { ClientModule } from './modules/client/client.module';
 import { CompanyModule } from './modules/company/company.module';
 import { CompanyBranchModule } from './modules/companyBranch/companyBranch.module';
 import { ProfessionalModule } from './modules/professional/professional.module';
+import { CategoryServiceModule } from './modules/categoryService/categoryService.module';
 import { ApiTokenGuard } from './shared/utils/api-token.guard';
 
 @Module({
@@ -17,6 +18,7 @@ import { ApiTokenGuard } from './shared/utils/api-token.guard';
     ClientModule,
     CompanyModule,
     CompanyBranchModule,
+    CategoryServiceModule,
     ProfessionalModule,
   ],
   controllers: [],

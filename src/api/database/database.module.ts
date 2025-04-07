@@ -5,6 +5,7 @@ import { ClientEntity } from '../modules/client/entities/client.entity';
 import { CompanyEntity } from '../modules/company/entities/company.entity';
 import { CompanyBranchEntity } from '../modules/companyBranch/entities/companyBranch.entity';
 import { ProfessionalEntity } from '../modules/professional/entities/professional.entity';
+import { CategoryServiceEntity } from '../modules/categoryService/entities/categoryService.entity';
 
 import * as dotenv from 'dotenv';
 dotenv.config();
@@ -16,7 +17,7 @@ export const AppDataSource = new DataSource({
   username: process.env.POSTGRES_DB_USER,
   password: process.env.POSTGRES_DB_PASSWORD,
   database: process.env.POSTGRES_DB_NAME,
-  entities: [ClientEntity, CompanyEntity, CompanyBranchEntity, ProfessionalEntity],
+  entities: [ClientEntity, CompanyEntity, CompanyBranchEntity, ProfessionalEntity, CategoryServiceEntity],
   migrations: [join(__dirname, 'migrations', '**/*.{ts,js}')],
   logging: true,
 });
