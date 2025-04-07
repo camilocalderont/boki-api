@@ -6,6 +6,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { AppDataSource } from './database/database.module';
 import { ClientModule } from './modules/client/client.module';
 import { CompanyModule } from './modules/company/company.module';
+import { CompanyBranchModule } from './modules/companyBranch/companyBranch.module';
 import { ApiTokenGuard } from './shared/utils/api-token.guard';
 
 @Module({
@@ -14,6 +15,7 @@ import { ApiTokenGuard } from './shared/utils/api-token.guard';
     TypeOrmModule.forRoot(AppDataSource.options),
     ClientModule,
     CompanyModule,
+    CompanyBranchModule,
   ],
   controllers: [],
   providers: [
