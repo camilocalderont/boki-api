@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { join } from 'path';
 import { ClientEntity } from '../modules/client/entities/client.entity';
+import { CompanyEntity } from '../modules/company/entities/company.entity';
 
 import * as dotenv from 'dotenv';
 dotenv.config();
@@ -13,7 +14,7 @@ export const AppDataSource = new DataSource({
   username: process.env.POSTGRES_DB_USER,
   password: process.env.POSTGRES_DB_PASSWORD,
   database: process.env.POSTGRES_DB_NAME,
-  entities: [ClientEntity],
+  entities: [ClientEntity, CompanyEntity],
   migrations: [join(__dirname, 'migrations', '**/*.{ts,js}')],
   logging: true,
 });

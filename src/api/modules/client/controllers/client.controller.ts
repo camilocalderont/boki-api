@@ -5,8 +5,6 @@ import { CreateClientDto } from '../dto/clientCreate.dto';
 import { UpdateClientDto } from '../dto/clientUpdate.dto';
 import { BaseCrudController } from '../../../shared/controllers/crud.controller';
 
-
-
 @Controller('clients')
 @UsePipes(new ValidationPipe({
   transform: true,
