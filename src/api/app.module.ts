@@ -9,6 +9,7 @@ import { CompanyModule } from './modules/company/company.module';
 import { CompanyBranchModule } from './modules/companyBranch/companyBranch.module';
 import { ProfessionalModule } from './modules/professional/professional.module';
 import { CategoryServiceModule } from './modules/categoryService/categoryService.module';
+import { ServiceModule } from './modules/service/service.module';
 import { ApiTokenGuard } from './shared/utils/api-token.guard';
 
 @Module({
@@ -20,6 +21,7 @@ import { ApiTokenGuard } from './shared/utils/api-token.guard';
     CompanyBranchModule,
     CategoryServiceModule,
     ProfessionalModule,
+    ServiceModule,
   ],
   controllers: [],
   providers: [
