@@ -3,9 +3,9 @@ export class CreateClientDto {
   VcPhone: string;
   vcNickName: string;
   VcFirstName: string;
-  VcSecondName: string;
+  VcSecondName?: string;
   VcFirstLastName: string;
-  VcSecondLastName: string;
+  VcSecondLastName?: string;
   VcEmail: string;
   VcPassword: string;
 }

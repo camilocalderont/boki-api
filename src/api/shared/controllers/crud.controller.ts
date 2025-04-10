@@ -1,14 +1,27 @@
-import { Get, Post, Put, Delete, Body, Param, HttpCode, HttpStatus, ParseIntPipe, Query, BadRequestException } from '@nestjs/common';
+import { Get, Post, Put, Delete, Body, Param, HttpCode, HttpStatus, ParseIntPipe, Query, BadRequestException, UsePipes } from '@nestjs/common';
 import { ICrudService } from '../interfaces/crud.interface';
+import { Schema } from 'joi';
+import { JoiValidationPipe } from '../utils/pipes/joi-validation.pipe';
+import { UseJoiValidationPipe } from '../utils/pipes/use-joi.pipe';
+
+
+// Create factory functions to create pipes with specific schemas
+export function createJoiValidationPipe(schema: Schema) {
+    return new JoiValidationPipe(schema);
+  }
 
 export abstract class BaseCrudController<T, CreateDto = any, UpdateDto = any> {
   constructor(
     protected readonly service: ICrudService<T, CreateDto, UpdateDto>,
-    protected readonly entityName: string
+    protected readonly entityName: string,
+    protected readonly createSchema: Schema,
+    protected readonly updateSchema: Schema
   ) { }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  //@UsePipes(new JoiValidationPipe(this.createSchema))
+  @UseJoiValidationPipe(instance => instance.createSchema)
   async create(@Body() createDto: CreateDto): Promise<T> {
     return await this.service.create(createDto);
   }
@@ -35,6 +48,8 @@ export abstract class BaseCrudController<T, CreateDto = any, UpdateDto = any> {
 
   @Put(':id')
   @HttpCode(HttpStatus.OK)
+  //@UsePipes(new JoiValidationPipe(this.updateSchema))
+  @UseJoiValidationPipe(instance => instance.updateSchema)
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDto: UpdateDto

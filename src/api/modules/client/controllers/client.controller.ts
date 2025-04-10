@@ -4,11 +4,11 @@ import { ClientEntity } from '../entities/client.entity';
 import { CreateClientDto } from '../dto/clientCreate.dto';
 import { UpdateClientDto } from '../dto/clientUpdate.dto';
 import { BaseCrudController } from '../../../shared/controllers/crud.controller';
-
+import { createClientSchema } from '../schemas/clientCreate.schema';
+import { updateClientSchema } from '../schemas/clientUpdate.schema';
 @Controller('clients')
 @UsePipes(new ValidationPipe({
   transform: true,
-  whitelist: true,
   forbidNonWhitelisted: true,
   transformOptions: { enableImplicitConversion: true }
 }))
@@ -17,6 +17,6 @@ export class ClientController extends BaseCrudController<ClientEntity, CreateCli
     @Inject(ClientService)
     private readonly clientService: ClientService
   ) {
-    super(clientService, 'clients');
+    super(clientService, 'clients', createClientSchema, updateClientSchema);
   }
 }

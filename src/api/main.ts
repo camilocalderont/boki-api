@@ -27,11 +27,7 @@ async function bootstrapApi() {
 
     app.setGlobalPrefix(`api/v${configApi.VERSION}`);
     app.enableCors();
-    app.useGlobalPipes(new ValidationPipe({
-      transform: true,
-      whitelist: true,
-      forbidNonWhitelisted: true,
-    }));
+
 
     const swaggerConfig = new DocumentBuilder()
       .setTitle('BokiBot API')
