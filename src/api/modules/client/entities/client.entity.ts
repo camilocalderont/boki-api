@@ -12,7 +12,7 @@ export class ClientEntity {
     VcPhone?: string;
 
     @Column({ name: 'vc_nick_name', type: 'varchar', length: 50, nullable: true })
-    vcNickName?: string;
+    VcNickName?: string;
 
     @Column({ name: 'vc_first_name', type: 'varchar', length: 50 })
     VcFirstName: string;

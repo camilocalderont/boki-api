@@ -1,30 +1,34 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
-import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { APP_GUARD } from '@nestjs/core';
 
-import { AppDataSource } from './database/data-source';
-
-import { LoggingReportService, AllExceptionsFilter} from './shared/utils/loggingReport.service';
+import { AppDataSource } from './database/database.module';
 import { ClientModule } from './modules/client/client.module';
+import { CompanyModule } from './modules/company/company.module';
+import { CompanyBranchModule } from './modules/companyBranch/companyBranch.module';
+import { ProfessionalModule } from './modules/professional/professional.module';
+import { CategoryServiceModule } from './modules/categoryService/categoryService.module';
+import { ServiceModule } from './modules/service/service.module';
 import { ApiTokenGuard } from './shared/utils/api-token.guard';
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(AppDataSource.options),
     ClientModule,
+    CompanyModule,
+    CompanyBranchModule,
+    CategoryServiceModule,
+    ProfessionalModule,
+    ServiceModule,
   ],
   controllers: [],
   providers: [
     {
       provide: APP_GUARD,
       useClass: ApiTokenGuard,
-    },
-    LoggingReportService,
-    {
-      provide: APP_FILTER,
-      useClass: AllExceptionsFilter,
-    },
+    }
   ],
 })
 export class AppModule { }

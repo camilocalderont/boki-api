@@ -3,12 +3,15 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { configApi } from './config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ResponseInterceptor } from './shared/utils/response.interceptor';
+import { HttpExceptionFilter, AllExceptionsFilter } from './shared/utils/http-exception.filter';
+import { DateFormatInterceptor } from './shared/interceptors/date-format.interceptor';
+
 const API_PORT = process.env.API_PORT || 3000;
 async function bootstrapApi() {
 
     const app = await NestFactory.create(AppModule);
 
-    // Configuración global de validación
     app.useGlobalPipes(new ValidationPipe({
         transform: true,
         whitelist: true,
@@ -16,13 +19,15 @@ async function bootstrapApi() {
         transformOptions: { enableImplicitConversion: true },
     }));
 
+    app.useGlobalInterceptors(
+        new ResponseInterceptor(),
+        new DateFormatInterceptor()
+    );
+    app.useGlobalFilters(new AllExceptionsFilter(), new HttpExceptionFilter());
+
     app.setGlobalPrefix(`api/v${configApi.VERSION}`);
     app.enableCors();
-    app.useGlobalPipes(new ValidationPipe({
-      transform: true,
-      whitelist: true,
-      forbidNonWhitelisted: true,
-    }));
+
 
     const swaggerConfig = new DocumentBuilder()
       .setTitle('BokiBot API')
