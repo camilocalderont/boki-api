@@ -6,6 +6,7 @@ import { CreateClientDto } from '../dto/clientCreate.dto';
 import { UpdateClientDto } from '../dto/clientUpdate.dto';
 import * as bcrypt from 'bcrypt';
 import { BaseCrudService } from '../../../shared/services/crud.services';
+import { ApiErrorItem } from '~/api/shared/interfaces/api-response.interface';
 
 @Injectable()
 export class ClientService extends BaseCrudService<ClientEntity, CreateClientDto, UpdateClientDto> {
@@ -21,8 +22,30 @@ export class ClientService extends BaseCrudService<ClientEntity, CreateClientDto
             where: { VcEmail: createClientDto.VcEmail }
         });
 
+        const existingClientByIdentification = await this.clientRepository.findOne({
+            where: { VcIdentificationNumber: createClientDto.VcIdentificationNumber }
+        });
+
+        const errors: ApiErrorItem[] = [];
+
         if (existingClient) {
-            throw new ConflictException('Ya existe un cliente con este email');
+            errors.push({
+                code: 'EMAIL_ALREADY_EXISTS',
+                message: 'Ya existe un cliente con este email',
+                field: 'VcEmail'
+            });
+        }
+
+        if (existingClientByIdentification) {
+            errors.push({
+                code: 'IDENTIFICATION_NUMBER_ALREADY_EXISTS',
+                message: 'Ya existe un cliente con este número de identificación',
+                field: 'VcIdentificationNumber'
+            });
+        }
+
+        if (errors.length > 0) {
+            throw new ConflictException(errors, "Ya existe un cliente con estos datos");
         }
 
     }

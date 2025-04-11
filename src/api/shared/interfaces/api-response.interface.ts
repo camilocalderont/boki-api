@@ -25,10 +25,16 @@ export interface ApiSuccessResponse<T = any> extends ApiResponseBase {
     data: T;
 }
 
-  // Respuesta de error
+// Respuesta de error
 export interface ApiErrorResponse extends ApiResponseBase {
     status: 'error';
     errors?: ApiErrorItem[];
+}
+
+// Respuesta de error
+export interface ApiServiceErrorResponse {
+    message: ApiErrorItem[];
+    error: string;
 }
 
   // Tipo que une ambas respuestas (útil para funciones que pueden devolver éxito o error)

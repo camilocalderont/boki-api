@@ -1,7 +1,7 @@
 // src/api/shared/filters/http-exception.filter.ts
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { ApiErrorResponse, ApiErrorItem } from '../interfaces/api-response.interface';
+import { ApiErrorResponse, ApiErrorItem, ApiServiceErrorResponse } from '../interfaces/api-response.interface';
 
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -14,14 +14,18 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const exceptionResponse = exception.getResponse();
 
     // Verificar si ya es una respuesta estandarizada
-    if (
-      typeof exceptionResponse === 'object' &&
-      exceptionResponse !== null &&
-      'status' in exceptionResponse &&
-      exceptionResponse['status'] === 'error'
-    ) {
+    if (this.isApiErrorResponse(exceptionResponse)) {
       // Es una respuesta ya formateada (probablemente de JoiValidationPipe)
       return response.status(status).json(exceptionResponse);
+    }
+
+    if (this.isApiServiceErrorResponse(exceptionResponse)) {
+      // Es una respuesta ya formateada (probablemente de JoiValidationPipe)
+      return response.status(status).json({
+        status: 'error',
+        message: exceptionResponse.error,
+        errors: exceptionResponse.message,
+      });
     }
 
     // Formar respuesta de error estandarizada para otros tipos de excepciones
@@ -56,6 +60,27 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     response.status(status).json(errorResponse);
   }
+    /**
+     * Type Guard para verificar si un objeto es una respuesta ApiErrorResponse
+     */
+    private isApiErrorResponse(obj: any): obj is ApiErrorResponse {
+        return obj !== null &&
+                typeof obj === 'object' &&
+                'status' in obj &&
+                obj['status'] === 'error';
+    }
+
+    /**
+     * Type Guard para verificar si un objeto es una respuesta ApiServiceErrorResponse
+     */
+    private isApiServiceErrorResponse(obj: any): obj is ApiServiceErrorResponse {
+        return obj !== null &&
+                typeof obj === 'object' &&
+                'message' in obj &&
+                'error' in obj &&
+                typeof obj.error === 'string' &&
+                'statusCode' in obj;
+    }
 }
 
 @Catch()
@@ -87,3 +112,5 @@ export class AllExceptionsFilter implements ExceptionFilter {
     response.status(status).json(errorResponse);
   }
 }
+
+
