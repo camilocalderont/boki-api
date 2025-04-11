@@ -4,7 +4,7 @@ import { ServiceService } from '../services/service.service';
 import { CreateServiceDto } from '../dto/serviceCreate.dto';
 import { UpdateServiceDto } from '../dto/serviceUpdate.dto';
 import { BaseCrudController } from '../../../shared/controllers/crud.controller';
-
+import Joi from 'joi';
 @Controller('services')
 @UsePipes(new ValidationPipe())
 export class ServiceController extends BaseCrudController<ServiceEntity, CreateServiceDto, UpdateServiceDto> {
@@ -12,7 +12,9 @@ export class ServiceController extends BaseCrudController<ServiceEntity, CreateS
         @Inject(ServiceService)
         private readonly serviceService: ServiceService
     ) {
-        super(serviceService, 'Service');
+        const createSchema = Joi.object({});
+        const updateSchema = Joi.object({});
+        super(serviceService, 'Service', createSchema, updateSchema);
     }
 
     @Get('company/:id')

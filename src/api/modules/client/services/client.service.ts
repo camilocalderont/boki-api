@@ -22,7 +22,7 @@ export class ClientService extends BaseCrudService<ClientEntity, CreateClientDto
         });
 
         if (existingClient) {
-            throw new ConflictException('Email already exists in the system');
+            throw new ConflictException('Ya existe un cliente con este email');
         }
 
     }
@@ -39,13 +39,13 @@ export class ClientService extends BaseCrudService<ClientEntity, CreateClientDto
     async create(createClientDto: CreateClientDto): Promise<ClientEntity> {
         try {
             await this.validateCreate(createClientDto);
-            
+
             const preparedData = await this.prepareCreateData(createClientDto);
             const entity = this.clientRepository.create(preparedData as any);
             const savedEntity = await this.clientRepository.save(entity as any);
-            
+
             await this.afterCreate(savedEntity as ClientEntity);
-            
+
             return savedEntity;
         } catch (error) {
             if (error instanceof BadRequestException ||
@@ -54,7 +54,7 @@ export class ClientService extends BaseCrudService<ClientEntity, CreateClientDto
             }
 
             if (error.code === '23505') {
-                throw new ConflictException('A client with this data already exists');
+                throw new ConflictException('Ya existe un cliente con estos datos');
             }
 
             console.error('Error in create:', error);
@@ -65,14 +65,14 @@ export class ClientService extends BaseCrudService<ClientEntity, CreateClientDto
     protected async validateUpdate(id: number, updateClientDto: UpdateClientDto): Promise<void> {
         try {
             const client = await this.findOne(id);
-            
+
             if (updateClientDto.VcEmail && updateClientDto.VcEmail !== client.VcEmail) {
                 const existingClient = await this.clientRepository.findOne({
                     where: { VcEmail: updateClientDto.VcEmail }
                 });
 
                 if (existingClient) {
-                    throw new ConflictException('The email already exists in the system');
+                    throw new ConflictException('Ya existe un cliente con este email');
                 }
             }
         } catch (error) {
@@ -85,28 +85,28 @@ export class ClientService extends BaseCrudService<ClientEntity, CreateClientDto
 
     protected async prepareUpdateData(entity: ClientEntity, updateClientDto: UpdateClientDto): Promise<Partial<ClientEntity>> {
         const preparedData = { ...updateClientDto };
-        
+
         if (preparedData.VcPassword) {
             preparedData.VcPassword = await bcrypt.hash(preparedData.VcPassword, 10);
         }
-        
+
         return preparedData;
     }
-    
+
     async update(id: number, updateClientDto: UpdateClientDto): Promise<ClientEntity> {
         try {
             return await super.update(id, updateClientDto);
         } catch (error) {
-            if (error instanceof BadRequestException || 
+            if (error instanceof BadRequestException ||
                 error instanceof ConflictException ||
                 error instanceof NotFoundException) {
                 throw error;
             }
-            
-            if (error.code === '23505') { 
-                throw new ConflictException('A client with this data already exists');
+
+            if (error.code === '23505') {
+                throw new ConflictException('Ya existe un cliente con estos datos');
             }
-            
+
             console.error('Error in update:', error);
             throw error;
         }

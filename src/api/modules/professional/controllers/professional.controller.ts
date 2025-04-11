@@ -4,7 +4,7 @@ import { ProfessionalEntity } from '../entities/professional.entity';
 import { CreateProfessionalDto } from '../dto/professionalCreate.dto';
 import { UpdateProfessionalDto } from '../dto/professionalUpdate.dto';
 import { BaseCrudController } from '../../../shared/controllers/crud.controller';
-
+import Joi from 'joi';
 @Controller('professionals')
 @UsePipes(new ValidationPipe({
   transform: true,
@@ -17,7 +17,9 @@ export class ProfessionalController extends BaseCrudController<ProfessionalEntit
     @Inject(ProfessionalService)
     private readonly professionalService: ProfessionalService
   ) {
-    super(professionalService, 'professionals');
+    const createSchema = Joi.object({});
+    const updateSchema = Joi.object({});
+    super(professionalService, 'professionals', createSchema, updateSchema);
   }
 
   @Get('specialization/:specialization')

@@ -23,7 +23,7 @@ async function bootstrapApi() {
         new ResponseInterceptor(),
         new DateFormatInterceptor()
     );
-    app.useGlobalFilters(new HttpExceptionFilter(), new AllExceptionsFilter());
+    app.useGlobalFilters(new AllExceptionsFilter(), new HttpExceptionFilter());
 
     app.setGlobalPrefix(`api/v${configApi.VERSION}`);
     app.enableCors();

@@ -4,6 +4,7 @@ import { CompanyEntity } from '../entities/company.entity';
 import { CreateCompanyDto } from '../dto/companyCreate.dto';
 import { UpdateCompanyDto } from '../dto/companyUpdate.dto';
 import { BaseCrudController } from '../../../shared/controllers/crud.controller';
+import Joi from 'joi';
 
 @Controller('companies')
 @UsePipes(new ValidationPipe({
@@ -17,6 +18,8 @@ export class CompanyController extends BaseCrudController<CompanyEntity, CreateC
     @Inject(CompanyService)
     private readonly companyService: CompanyService
   ) {
-    super(companyService, 'companies');
+    const createSchema = Joi.object({});
+    const updateSchema = Joi.object({});
+    super(companyService, 'companies', createSchema, updateSchema);
   }
 }

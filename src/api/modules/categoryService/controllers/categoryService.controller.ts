@@ -4,7 +4,7 @@ import { CategoryServiceEntity } from '../entities/categoryService.entity';
 import { CreateCategoryServiceDto } from '../dto/categoryServiceCreate.dto';
 import { UpdateCategoryServiceDto } from '../dto/categoryServiceUpdate.dto';
 import { BaseCrudController } from '../../../shared/controllers/crud.controller';
-
+import Joi from 'joi';
 @Controller('category-services')
 @UsePipes(new ValidationPipe({
   transform: true,
@@ -17,6 +17,8 @@ export class CategoryServiceController extends BaseCrudController<CategoryServic
         @Inject(CategoryServiceService)
         private readonly categoryServiceService: CategoryServiceService
     ) {
-        super(categoryServiceService, 'category-services');
+        const createSchema = Joi.object({});
+        const updateSchema = Joi.object({});
+        super(categoryServiceService, 'category-services', createSchema, updateSchema);
     }
 }

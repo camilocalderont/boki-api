@@ -4,7 +4,7 @@ import { CompanyBranchEntity } from '../entities/companyBranch.entity';
 import { CreateCompanyBranchDto } from '../dto/companyBranchCreate.dto';
 import { UpdateCompanyBranchDto } from '../dto/companyBranchUpdate.dto';
 import { BaseCrudController } from '../../../shared/controllers/crud.controller';
-
+import Joi from 'joi';
 @Controller('company-branches')
 @UsePipes(new ValidationPipe({
   transform: true,
@@ -17,7 +17,9 @@ export class CompanyBranchController extends BaseCrudController<CompanyBranchEnt
     @Inject(CompanyBranchService)
     private readonly companyBranchService: CompanyBranchService
   ) {
-    super(companyBranchService, 'company-branches');
+    const createSchema = Joi.object({});
+    const updateSchema = Joi.object({});
+    super(companyBranchService, 'company-branches', createSchema, updateSchema);
   }
 
   @Get('company/:companyId')

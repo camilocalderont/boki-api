@@ -1,7 +1,7 @@
 export class UpdateClientDto {
   VcIdentificationNumber?: string;
   VcPhone: string;
-  vcNickName: string;
+  VcNickName: string;
   VcFirstName: string;
   VcSecondName?: string;
   VcFirstLastName: string;

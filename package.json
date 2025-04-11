@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node ./dist/app.js",
     "start:dev": "tsx watch ./src/app.ts",
+    "debug:simple": "tsx --inspect-brk --watch ./src/app.ts",
     "lint": "eslint . --no-ignore",
     "dev": "tsx ./src/app.ts",
     "build": "npx rollup -c",
@@ -55,6 +56,7 @@
     "rollup": "^4.10.0",
     "rollup-plugin-typescript2": "^0.36.0",
     "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "tsx": "^4.7.1",
     "typeorm": "^0.3.21",
     "typeorm-ts-node-commonjs": "^0.3.20",
