@@ -1,29 +1,21 @@
+import 'reflect-metadata';
+import bootstrapApi from './api/main';
+import bootstrapBot from './bot/main';
 
-import { createBot } from '@builderbot/bot'
-import { PostgreSQLAdapter as Database } from '@builderbot/database-postgres'
-import { provider } from './bot/provider';
-import { config } from './bot/config';
-import templates from './bot/templates';
+async function main() {
+  try {
+    // Iniciar el bot
+    // await bootstrapBot();
 
-const PORT = config.PORT
-
-const main = async () => {
-
-    const adapterDB = new Database({
-       host: config.POSTGRES_DB_HOST,
-       user: config.POSTGRES_DB_USER,
-       database: config.POSTGRES_DB_NAME,
-       password: config.POSTGRES_DB_PASSWORD,
-       port: +config.POSTGRES_DB_PORT
-   });
-
-    const { handleCtx, httpServer } = await createBot({
-        flow: templates,
-        provider: provider,
-        database: adapterDB,
-    });
-
-    httpServer(+PORT);
+    // Iniciar el API
+    await bootstrapApi();
+  } catch (error) {
+    const errorCode = 1001;
+    const customErrorMessage = 'A critical error occurred while starting the application';
+    console.error(`[${customErrorMessage}] (Code: ${errorCode}) =>`, error.message);
+    console.error(error.stack);
+    process.exit(errorCode);
+  }
 }
 
 main();
