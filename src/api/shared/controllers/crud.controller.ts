@@ -17,7 +17,7 @@ export abstract class BaseCrudController<T, CreateDto = any, UpdateDto = any> {
   @HttpCode(HttpStatus.CREATED)
   @UseJoiValidationPipe(instance => instance.createSchema)
   async create(@Body() createDto: CreateDto): Promise<ApiControllerResponse<T>> {
-    const data =  await this.service.create(createDto);
+    const data = await this.service.create(createDto);
     return {
       message: `${this.entityName} creado de forma exitosa`,
       data: data
@@ -55,10 +55,7 @@ export abstract class BaseCrudController<T, CreateDto = any, UpdateDto = any> {
   @Put(':id')
   @HttpCode(HttpStatus.OK)
   @UseJoiValidationPipe(instance => instance.updateSchema)
-  async update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateDto: UpdateDto
-  ): Promise<{ message: string; data: T }> {
+  async update(@Param('id', ParseIntPipe) id: number,@Body() updateDto: UpdateDto): Promise<ApiControllerResponse<T>> {
     if (isNaN(id) || id <= 0) {
       throw new BadRequestException(`ID inválido: ${id}. El ID debe ser un número positivo.`);
     }

@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ClientEntity } from '../entities/client.entity';
-import { CreateClientDto } from '../dto/clientCreate.dto';
 
 @Injectable()
 export class ClientRepository {
@@ -11,29 +10,14 @@ export class ClientRepository {
     private readonly clientRepository: Repository<ClientEntity>,
   ) {}
 
-  async create(createClientDto: CreateClientDto): Promise<ClientEntity> {
-    const client = this.clientRepository.create(createClientDto);
-    return await this.clientRepository.save(client);
-  }
-
-  async findAll(): Promise<ClientEntity[]> {
-    return await this.clientRepository.find();
-  }
-
-  async findOne(id: number): Promise<ClientEntity> {
-    return await this.clientRepository.findOne({ where: { Id: id } });
-  }
-
-  async findByEmail(email: string): Promise<ClientEntity> {
-    return await this.clientRepository.findOne({ where: { VcEmail: email } });
-  }
-
-  async update(id: number, updateClientDto: Partial<CreateClientDto>): Promise<ClientEntity> {
-    await this.clientRepository.update(id, updateClientDto);
-    return await this.findOne(id);
-  }
-
-  async delete(id: number): Promise<void> {
-    await this.clientRepository.delete(id);
+  async findByPhone(phone: string): Promise<ClientEntity> {
+    try {
+      const client = await this.clientRepository.findOne({ 
+        where: { VcPhone: phone } 
+      });
+      return client;
+    } catch (error) {
+      throw error;
+    }
   }
 }

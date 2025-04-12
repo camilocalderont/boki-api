@@ -4,6 +4,8 @@ import { CompanyEntity } from '../entities/company.entity';
 import { CreateCompanyDto } from '../dto/companyCreate.dto';
 import { UpdateCompanyDto } from '../dto/companyUpdate.dto';
 import { BaseCrudController } from '../../../shared/controllers/crud.controller';
+import { createCompanySchema } from '../schemas/companyCreate.schema';
+import { updateCompanySchema } from '../schemas/companyUpdate.schema';
 import Joi from 'joi';
 
 @Controller('companies')
@@ -18,8 +20,6 @@ export class CompanyController extends BaseCrudController<CompanyEntity, CreateC
     @Inject(CompanyService)
     private readonly companyService: CompanyService
   ) {
-    const createSchema = Joi.object({});
-    const updateSchema = Joi.object({});
-    super(companyService, 'companies', createSchema, updateSchema);
+    super(companyService, 'companies', createCompanySchema, updateCompanySchema);
   }
 }

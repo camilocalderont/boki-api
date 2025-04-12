@@ -1,4 +1,4 @@
-import {Controller, Inject, ValidationPipe, UsePipes} from '@nestjs/common';
+import { Controller, Inject, ValidationPipe, HttpCode, UsePipes, Get, Param, HttpStatus } from '@nestjs/common';
 import { ClientService } from '../services/client.service';
 import { ClientEntity } from '../entities/client.entity';
 import { CreateClientDto } from '../dto/clientCreate.dto';
@@ -6,6 +6,7 @@ import { UpdateClientDto } from '../dto/clientUpdate.dto';
 import { BaseCrudController } from '../../../shared/controllers/crud.controller';
 import { createClientSchema } from '../schemas/clientCreate.schema';
 import { updateClientSchema } from '../schemas/clientUpdate.schema';
+import { ApiControllerResponse } from '~/api/shared/interfaces/api-response.interface';
 @Controller('clients')
 @UsePipes(new ValidationPipe({
   transform: true,
@@ -18,5 +19,15 @@ export class ClientController extends BaseCrudController<ClientEntity, CreateCli
     private readonly clientService: ClientService
   ) {
     super(clientService, 'clients', createClientSchema, updateClientSchema);
+  }
+
+  @Get('cellphone/:cellphone')
+  @HttpCode(HttpStatus.OK)
+  async clientByCellphone(@Param('cellphone') cellphone: string): Promise<ApiControllerResponse<ClientEntity>> {
+    const data = await this.clientService.clientByCellphone(cellphone);
+    return {
+      message: 'Client successfully obtained',
+      data: data
+    };
   }
 }
