@@ -11,9 +11,20 @@ export function UseJoiValidationPipe(schemaFactory: (instance: any) => Schema) {
         const schema = schemaFactory(this);
         const pipe = new JoiValidationPipe(schema);
 
-        // Apply the pipe to the first argument (usually the body)
-        if (args.length > 0) {
-          args[0] = pipe.transform(args[0]);
+        // Look for object arguments which are likely to be the request body
+        for (let i = 0; i < args.length; i++) {
+            const arg = args[i];
+            // If the argument is an object and not null, it's likely the request body
+            if (arg !== null && typeof arg === 'object' && !Array.isArray(arg)) {
+            // Skip if it's a Request or Response object
+            if (!(arg.constructor &&
+                (arg.constructor.name === 'Request' ||
+                arg.constructor.name === 'Response'))) {
+                // Found the body - validate it
+                args[i] = pipe.transform(arg);
+                break; // Only validate the first matching object
+            }
+            }
         }
 
         // Call the original method with validated args
