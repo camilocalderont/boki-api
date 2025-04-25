@@ -20,7 +20,6 @@ export class CompanyBranchController extends BaseCrudController<CompanyBranchEnt
     @Inject(CompanyBranchService)
     private readonly companyBranchService: CompanyBranchService
   ) {
-    // Utilizar los esquemas creados para validar la creación y actualización
     super(companyBranchService, 'company-branches', createCompanyBranchSchema, updateCompanyBranchSchema);
   }
 

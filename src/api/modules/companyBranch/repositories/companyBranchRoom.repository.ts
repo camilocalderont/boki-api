@@ -15,4 +15,5 @@ export class CompanyBranchRoomRepository {
         const companyBranchRoom = this.companyBranchRoomRepository.create(CreateCompanyBranchRoomDto);
         return await this.companyBranchRoomRepository.save(companyBranchRoom);
     }
+    
 }

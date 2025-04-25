@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CompanyBranchController } from './controllers/companyBranch.controller';
 import { CompanyBranchService } from './services/companyBranch.service';
@@ -12,16 +12,7 @@ import { CompanyEntity } from '../company/entities/company.entity';
     TypeOrmModule.forFeature([CompanyBranchEntity, CompanyBranchRoomEntity, CompanyEntity]),
   ],
   controllers: [CompanyBranchController],
-  providers: [
-    {
-      provide: CompanyBranchService,
-      useClass: CompanyBranchService
-    },
-    {
-      provide: CompanyBranchRoomService,
-      useClass: CompanyBranchRoomService
-    }
-  ],
+  providers: [CompanyBranchService, CompanyBranchRoomService],
   exports: [CompanyBranchService, CompanyBranchRoomService],
 })
 export class CompanyBranchModule {}

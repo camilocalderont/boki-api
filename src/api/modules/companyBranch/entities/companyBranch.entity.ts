@@ -1,5 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { CompanyEntity } from '../../company/entities/company.entity';
+import { CompanyBranchRoomEntity } from './companyBranchRoom.entity';
 
 @Entity('CompanyBranch')
 export class CompanyBranchEntity {
@@ -12,6 +13,9 @@ export class CompanyBranchEntity {
     @ManyToOne(() => CompanyEntity)
     @JoinColumn({ name: 'company_id' })
     Company: CompanyEntity;
+
+    @OneToMany(() => CompanyBranchRoomEntity, companyBranchRoom => companyBranchRoom.CompanyBranch)
+    CompanyBranchRooms: CompanyBranchRoomEntity[];
 
     @Column({ name: 'vc_name', type: 'varchar', length: 100 })
     VcName: string;
