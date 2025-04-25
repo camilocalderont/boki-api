@@ -40,10 +40,10 @@ export class CompanyService extends BaseCrudService<CompanyEntity, CreateCompany
         try {
             await this.validateCreate(createCompanyDto);
 
-            const entity = this.companyRepository.create(createCompanyDto as any);
-            const savedEntity = await this.companyRepository.save(entity as any);
+            const entity = this.companyRepository.create(createCompanyDto);
+            const savedEntity = await this.companyRepository.save(entity);
 
-            await this.afterCreate(savedEntity as CompanyEntity);
+            await this.afterCreate(savedEntity);
 
             return savedEntity;
         } catch (error) {

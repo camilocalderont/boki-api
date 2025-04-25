@@ -8,4 +8,5 @@ export class CreateServiceDto {
     VcTime: string;
     CompanyId: number;
     CategoryId: number;
+    TxPicture?: string; 
 }

@@ -28,6 +28,9 @@ export class ServiceEntity {
     @Column({ name: 'vc_time', type: 'varchar', length: 20 })
     VcTime: string;
 
+    @Column({ name: 'tx_picture', type: 'text', nullable: true })
+    TxPicture: string;
+
     @Column({ name: 'company_id', type: 'int' })
     CompanyId: number;
 

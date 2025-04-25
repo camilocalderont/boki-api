@@ -8,4 +8,5 @@ export class UpdateServiceDto {
     VcTime?: string;
     CompanyId?: number;
     CategoryId?: number;
+    TxPicture?: string; 
 }
