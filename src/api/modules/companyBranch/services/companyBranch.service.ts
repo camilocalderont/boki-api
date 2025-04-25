@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
-import { Repository, Not, QueryRunner, DataSource } from 'typeorm';
+import { Repository, QueryRunner, Not, In, DataSource } from 'typeorm';
 import { CompanyBranchEntity } from '../entities/companyBranch.entity';
 import { CompanyBranchRoomEntity } from '../entities/companyBranchRoom.entity';
 import { CreateCompanyBranchDto } from '../dto/companyBranchCreate.dto';
@@ -25,6 +25,56 @@ export class CompanyBranchService extends BaseCrudService<CompanyBranchEntity, C
         private readonly companyBranchRoomService: CompanyBranchRoomService
     ) {
         super(companyBranchRepository);
+    }
+
+    async findOne(id: number): Promise<CompanyBranchEntity> {
+        try {
+            const entity = await this.companyBranchRepository.findOne({
+                where: { Id: id }
+            });
+
+            if (!entity) {
+                throw new NotFoundException([
+                    {
+                        code: 'SUCURSAL_NO_ENCONTRADA',
+                        message: `Sucursal con ID ${id} no encontrada`,
+                        field: 'Id'
+                    }
+                ]);
+            }
+
+            const rooms = await this.companyBranchRoomRepository.find({
+                where: { CompanyBranch: { Id: id } }
+            });
+
+            (entity as any).CompanyBranchRooms = rooms;
+
+            return entity;
+        } catch (error) {
+            if (error instanceof NotFoundException ||
+                error instanceof BadRequestException ||
+                error instanceof ConflictException) {
+                throw error;
+            }
+
+            if (error.code === '23505') {
+                throw new ConflictException([
+                    {
+                        code: 'ERROR_CONSULTA_SUCURSAL',
+                        message: 'Error al consultar la sucursal',
+                        field: 'Id'
+                    }
+                ]);
+            }
+
+            throw new BadRequestException([
+                {
+                    code: 'ERROR_CONSULTA_SUCURSAL',
+                    message: `Error al consultar la sucursal: ${error.message}`,
+                    field: 'Id'
+                }
+            ]);
+        }
     }
 
     protected async validateCreate(createCompanyBranchDto: CreateCompanyBranchDto): Promise<void> {
@@ -200,6 +250,58 @@ export class CompanyBranchService extends BaseCrudService<CompanyBranchEntity, C
             }
         }
 
+        if (updateCompanyBranchDto.CompanyBranchRooms !== undefined) {
+            if (updateCompanyBranchDto.CompanyBranchRooms.length === 0) {
+                errors.push({
+                    code: 'SIN_SALAS',
+                    message: 'Una sucursal debe tener al menos una sala asociada',
+                    field: 'CompanyBranchRooms'
+                });
+            } else {
+                const hasPrincipalRoom = updateCompanyBranchDto.CompanyBranchRooms.some(room => room.BIsMain === true);
+                if (!hasPrincipalRoom) {
+                    errors.push({
+                        code: 'SIN_SALA_PRINCIPAL',
+                        message: 'Debe existir al menos una sala principal en la sucursal',
+                        field: 'CompanyBranchRooms'
+                    });
+                }
+
+                const principalRooms = updateCompanyBranchDto.CompanyBranchRooms.filter(room => room.BIsMain === true);
+                if (principalRooms.length > 1) {
+                    errors.push({
+                        code: 'MULTIPLE_SALAS_PRINCIPALES',
+                        message: 'Solo puede existir una sala principal por sucursal',
+                        field: 'CompanyBranchRooms'
+                    });
+                }
+
+                const emails = updateCompanyBranchDto.CompanyBranchRooms
+                    .filter(room => room.VcEmail && room.VcEmail.trim() !== '')
+                    .map(room => room.VcEmail.toLowerCase());
+
+                if (new Set(emails).size !== emails.length) {
+                    errors.push({
+                        code: 'CORREOS_SALAS_DUPLICADOS',
+                        message: 'Existen correos electrónicos duplicados entre las salas',
+                        field: 'CompanyBranchRooms'
+                    });
+                }
+
+                const roomNumbers = updateCompanyBranchDto.CompanyBranchRooms
+                    .filter(room => room.VcNumber && room.VcNumber.trim() !== '')
+                    .map(room => room.VcNumber.trim());
+
+                if (new Set(roomNumbers).size !== roomNumbers.length) {
+                    errors.push({
+                        code: 'NUMEROS_SALAS_DUPLICADOS',
+                        message: 'Existen números de sala duplicados',
+                        field: 'CompanyBranchRooms'
+                    });
+                }
+            }
+        }
+
         if (errors.length > 0) {
             throw new ConflictException(errors, 'Error en la validación para la actualización de la sucursal');
         }
@@ -209,61 +311,80 @@ export class CompanyBranchService extends BaseCrudService<CompanyBranchEntity, C
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
-        
+
         try {
             await this.validateUpdate(id, updateCompanyBranchDto);
-            
-            const { 
-                CompanyBranchRooms, 
-                NewCompanyBranchRooms, 
-                DeleteCompanyBranchRoomIds, 
-                ...branchData 
+
+            const {
+                CompanyBranchRooms,
+                ...branchData
             } = updateCompanyBranchDto;
-            
+
             const existingBranch = await queryRunner.manager.findOne(CompanyBranchEntity, {
                 where: { Id: id }
             });
-                  
+
             Object.assign(existingBranch, branchData);
             await queryRunner.manager.save(existingBranch);
-            
-            if (CompanyBranchRooms && CompanyBranchRooms.length > 0) {
-                await this.companyBranchRoomService.update(queryRunner, id, CompanyBranchRooms);
-            }
-            
-            if (NewCompanyBranchRooms && NewCompanyBranchRooms.length > 0) {
-                for (const newRoomData of NewCompanyBranchRooms) {
-                    const newRoom = queryRunner.manager.create(CompanyBranchRoomEntity, {
-                        ...newRoomData,
-                        CompanyBranchId: id,
-                        CompanyBranch: existingBranch
+
+            if (CompanyBranchRooms !== undefined) {
+                const existingRooms = await this.companyBranchRoomRepository.find({
+                    where: { CompanyBranch: { Id: id } }
+                });
+
+                const existingRoomIds = existingRooms.map(room => room.Id);
+                const providedRoomIds = CompanyBranchRooms
+                    .filter(room => room.Id !== undefined)
+                    .map(room => room.Id);
+
+                const roomsToDeleteIds = existingRoomIds.filter(roomId => !providedRoomIds.includes(roomId));
+
+                if (roomsToDeleteIds.length > 0) {
+                    await queryRunner.manager.delete(CompanyBranchRoomEntity, {
+                        Id: In(roomsToDeleteIds),
+                        CompanyBranch: { Id: id }
                     });
-                    
-                    await queryRunner.manager.save(newRoom);
+                }
+
+                for (const roomData of CompanyBranchRooms) {
+                    if (roomData.Id) {
+                        const { Id, ...updateData } = roomData;
+                        const existingRoom = await queryRunner.manager.findOne(CompanyBranchRoomEntity, {
+                            where: { Id, CompanyBranch: { Id: id } }
+                        });
+
+                        if (existingRoom) {
+                            Object.assign(existingRoom, updateData);
+                            await queryRunner.manager.save(existingRoom);
+                        }
+                    } else {
+                        const newRoom = queryRunner.manager.create(CompanyBranchRoomEntity, {
+                            ...roomData,
+                            CompanyBranch: existingBranch
+                        });
+
+                        await queryRunner.manager.save(newRoom);
+                    }
                 }
             }
-            
-            if (DeleteCompanyBranchRoomIds && DeleteCompanyBranchRoomIds.length > 0) {
-                await this.companyBranchRoomService.delete(queryRunner, id, DeleteCompanyBranchRoomIds);
-            }
-            
+
             await queryRunner.commitTransaction();
-            
+
             const updatedBranch = await this.companyBranchRepository.findOne({
                 where: { Id: id }
             });
-            
+
             const rooms = await this.companyBranchRoomRepository.find({
                 where: { CompanyBranch: { Id: id } }
             });
-            
+
             (updatedBranch as any).CompanyBranchRooms = rooms;
-            
+
             return updatedBranch;
-            
+
         } catch (error) {
             await queryRunner.rollbackTransaction();
- 
+
             if (error instanceof BadRequestException || error instanceof ConflictException || error instanceof NotFoundException) {
                 throw error;
             }
@@ -279,12 +400,12 @@ export class CompanyBranchService extends BaseCrudService<CompanyBranchEntity, C
                 );
             }
 
-            throw new BadRequestException(error,'Error al actualizar la sucursal y sus salas');
+            throw new BadRequestException(error, 'Error al actualizar la sucursal y sus salas');
         } finally {
             await queryRunner.release();
         }
     }
-    
+
     async findByCompany(companyId: number): Promise<any> {
         const company = await this.companyRepository.findOne({
             where: { Id: companyId }

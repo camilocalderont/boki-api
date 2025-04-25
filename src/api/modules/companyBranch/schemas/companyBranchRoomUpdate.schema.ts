@@ -2,7 +2,7 @@ import * as Joi from 'joi';
 import { joiMessagesES } from '../../../shared/utils/joi-messages';
 
 export const updateCompanyBranchRoomSchema = Joi.object({
-  Id: Joi.number().integer().positive().required(),
+  Id: Joi.number().integer().positive().optional(),
   CompanyBranchId: Joi.number().integer().positive(),
   VcNumber: Joi.string().min(1).max(100),
   VcFloor: Joi.string().min(1).max(100).allow('', null),
