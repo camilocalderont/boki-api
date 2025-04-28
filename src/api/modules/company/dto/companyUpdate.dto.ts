@@ -5,6 +5,6 @@ export class UpdateCompanyDto {
   VcPrincipalAddress?: string;
   VcPrincipalEmail?: string;
   VcLegalRepresentative?: string;
-  VcLogo?: string;
+  TxLogo?: string;
   TxImages?: string;
 }

@@ -11,6 +11,6 @@ export const createCompanySchema = Joi.object({
   VcPrincipalAddress: Joi.string().required(),
   VcPrincipalEmail: Joi.string().email().required(),
   VcLegalRepresentative: Joi.string().min(2).max(50).required(),
-  VcLogo: Joi.string().required(),
-  TxImages: Joi.string().required()
+  TxLogo: Joi.string().optional(),
+  TxImages: Joi.string().optional()
 }).messages(joiMessagesES);

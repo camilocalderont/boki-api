@@ -25,90 +25,114 @@ export class CompanyService extends BaseCrudService<CompanyEntity, CreateCompany
 
         if (existingCompany) {
             errors.push({
-                code: 'EMAIL_ALREADY_EXISTS',
-                message: 'There is already a company with this email.',
-                field: 'VcPrincipalEmail'
+                code: 'Ya_existe_empresa',
+                message: 'Ya existe una empresa con estos datos',
+                field: 'company'
             });
         }
 
         if (errors.length > 0) {
-            throw new ConflictException(errors, "There is already a company with these data");
+            throw new ConflictException(errors, "Error en la creación de empresa");
         }
     }
 
     async create(createCompanyDto: CreateCompanyDto): Promise<CompanyEntity> {
         try {
             await this.validateCreate(createCompanyDto);
-
             const entity = this.companyRepository.create(createCompanyDto);
             const savedEntity = await this.companyRepository.save(entity);
-
             await this.afterCreate(savedEntity);
-
             return savedEntity;
+
         } catch (error) {
             if (error instanceof BadRequestException || error instanceof ConflictException) {
                 throw error;
             }
-
             if (error.code === '23505') {
                 throw new ConflictException(
                     [{
-                        code: '23505',
-                        message: 'There is already a company with these data',
+                        code: 'Ya_existe_empresa',
+                        message: 'Ya existe una empresa con estos datos',
                         field: 'company'
                     }],
-                    'There is already a company with these data'
+                    'Ya existe una empresa con estos datos'
                 );
             }
 
-            throw new BadRequestException('An unexpected error occurred', error);
+            throw new BadRequestException('Ha ocurrido un error inesperado', error);
         }
     }
 
     protected async validateUpdate(id: number, updateCompanyDto: UpdateCompanyDto): Promise<void> {
-        const company = await this.findOne(id);
+        const errors: ApiErrorItem[] = [];
+        let company: CompanyEntity;
+        try {
+            company = await this.findOne(id);
+        } catch (error) {
+            if (error instanceof NotFoundException) {
+                throw new NotFoundException([
+                    {
+                        code: 'EMPRESA_NO_EXISTE',
+                        message: `La empresa con ID ${id} no existe`,
+                        field: 'id'
+                    }
+                ], `La empresa con ID ${id} no existe`);
+            }
+            throw error;
+        }
 
         if (updateCompanyDto.VcPrincipalEmail && updateCompanyDto.VcPrincipalEmail !== company.VcPrincipalEmail) {
             const existingCompany = await this.companyRepository.findOne({
                 where: { VcPrincipalEmail: updateCompanyDto.VcPrincipalEmail }
             });
-            const errors: ApiErrorItem[] = [];
 
             if (existingCompany) {
                 errors.push({
-                    code: 'EMAIL_ALREADY_EXISTS',
-                    message: 'There is already a company with this email.',
-                    field: 'VcPrincipalEmail'
+                    code: 'Ya_existe_empresa',
+                    message: 'Ya existe una empresa con estos datos',
+                    field: 'company'
                 });
             }
 
             if (errors.length > 0) {
-                throw new ConflictException(errors, "There is already a company with these data");
+                throw new ConflictException(errors, "Error en la actualización de empresa");
             }
         }
     }
 
     async update(id: number, updateCompanyDto: UpdateCompanyDto): Promise<CompanyEntity> {
         try {
-            return await super.update(id, updateCompanyDto);
+            await this.validateUpdate(id, updateCompanyDto);
+            const existingEntity = await this.companyRepository.findOne({ where: { Id: id } });
+            
+            Object.assign(existingEntity, updateCompanyDto);
+            const updatedEntity = await this.companyRepository.save(existingEntity);
+            return updatedEntity;
         } catch (error) {
-            if (error instanceof BadRequestException || error instanceof ConflictException) {
+            if (error instanceof NotFoundException || 
+                error instanceof BadRequestException || 
+                error instanceof ConflictException) {
                 throw error;
             }
 
             if (error.code === '23505') {
                 throw new ConflictException(
                     [{
-                        code: '23505',
-                        message: 'There is already a company with these data',
+                        code: 'Ya_existe_empresa',
+                        message: 'Ya existe una empresa con estos datos',
                         field: 'company'
                     }],
-                    'There is already a company with these data'
+                    'Ya existe una empresa con estos datos'
                 );
             }
 
-            throw new BadRequestException('An unexpected error occurred', error);
+            throw new BadRequestException([
+                {
+                    code: 'ERROR_ACTUALIZAR',
+                    message: 'Ha ocurrido un error al actualizar la empresa',
+                    field: 'unknown'
+                }
+            ], 'Ha ocurrido un error inesperado');
         }
     }
 }

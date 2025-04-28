@@ -23,8 +23,8 @@ export class CompanyEntity {
     @Column({ name: 'vc_legal_representative', type: 'varchar', length: 100, nullable: true })
     VcLegalRepresentative?: string;
 
-    @Column({ name: 'vc_logo', type: 'varchar', length: 255, nullable: true })
-    VcLogo?: string;
+    @Column({ name: 'tx_logo', type: 'text', nullable: true })
+    TxLogo?: string;
 
     @Column({ name: 'tx_images', type: 'text', nullable: true })
     TxImages?: string;

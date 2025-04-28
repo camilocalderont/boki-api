@@ -32,8 +32,8 @@ export class ProfessionalEntity {
     @Column({ name: 'i_years_of_experience', type: 'int', default: 0 })
     IYearsOfExperience: number;
 
-    @Column({ name: 'vc_photo', type: 'varchar', length: 255, nullable: true })
-    VcPhoto?: string;
+    @Column({ name: 'tx_photo', type: 'text', nullable: true })
+    TxPhoto?: string;
 
     @Column({ name: 'vc_profession', type: 'varchar', length: 100 })
     VcProfession: string;

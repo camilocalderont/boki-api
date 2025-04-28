@@ -8,7 +8,7 @@ export class CreateProfessionalDto {
   VcIdentificationNumber: string;
   VcLicenseNumber?: string;
   IYearsOfExperience?: number;
-  VcPhoto?: string;
+  TxPhoto?: string;
   VcProfession: string;
   VcSpecialization?: string;
 }

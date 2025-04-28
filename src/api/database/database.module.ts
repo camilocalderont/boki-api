@@ -6,6 +6,7 @@ import { CompanyEntity } from '../modules/company/entities/company.entity';
 import { CompanyBranchEntity } from '../modules/companyBranch/entities/companyBranch.entity';
 import { CompanyBranchRoomEntity } from '../modules/companyBranch/entities/companyBranchRoom.entity';
 import { ProfessionalEntity } from '../modules/professional/entities/professional.entity';
+import { ProfessionalBussinessHourEntity } from '../modules/professional/entities/professionalBussinessHour.entity';
 import { CategoryServiceEntity } from '../modules/categoryService/entities/categoryService.entity';
 import { ServiceEntity } from '../modules/service/entities/service.entity';
 
@@ -19,7 +20,7 @@ export const AppDataSource = new DataSource({
   username: process.env.POSTGRES_DB_USER,
   password: process.env.POSTGRES_DB_PASSWORD,
   database: process.env.POSTGRES_DB_NAME,
-  entities: [ClientEntity, CompanyEntity, CompanyBranchEntity, CompanyBranchRoomEntity, ProfessionalEntity, CategoryServiceEntity, ServiceEntity],
+  entities: [ClientEntity, CompanyEntity, CompanyBranchEntity, CompanyBranchRoomEntity, ProfessionalEntity, ProfessionalBussinessHourEntity, CategoryServiceEntity, ServiceEntity],
   //comando para generar migraciones npx typeorm-ts-node-commonjs migration:generate src/api/database/migrations/crateNombreTable -d src/api/database/database.module.ts
   migrations: [join(__dirname, 'migrations', '**/*.{ts,js}')],
   logging: true,
