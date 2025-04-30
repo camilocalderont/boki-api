@@ -1,5 +1,6 @@
 import * as Joi from 'joi';
 import { joiMessagesES } from '../../../shared/utils/joi-messages';
+import { createServiceStageSchema } from './serviceStageCreate.schema';
 
 export const createServiceSchema = Joi.object({
   VcName: Joi.string().required().min(3).max(100),
@@ -19,5 +20,9 @@ export const createServiceSchema = Joi.object({
   VcTime: Joi.string().pattern(/^([0-9]{1,2}):([0-5][0-9])$/).required(),
   CompanyId: Joi.number().integer().positive().required(),
   CategoryId: Joi.number().integer().positive().required(),
-  TxPicture: Joi.string().optional()
+  TxPicture: Joi.string().optional(),
+  ServiceStages: Joi.alternatives().try(
+    Joi.array().items(createServiceStageSchema),
+    Joi.string()
+  ).optional()
 }).messages(joiMessagesES);

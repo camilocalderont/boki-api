@@ -29,9 +29,6 @@ export class ClientEntity {
     @Column({ name: 'vc_email', type: 'varchar', length: 100, unique: true })
     VcEmail: string;
 
-    @Column({ name: 'vc_password', type: 'varchar', length: 255 })
-    VcPassword: string;
-
     @CreateDateColumn({ name: 'created_at' })
     created_at: Date;
 

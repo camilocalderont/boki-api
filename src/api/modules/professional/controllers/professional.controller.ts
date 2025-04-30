@@ -1,15 +1,15 @@
-import { Controller, Inject, ValidationPipe, UsePipes, Get, Param, ParseIntPipe, Post, HttpCode, HttpStatus, UseInterceptors, Body, UploadedFile, Put, BadRequestException } from '@nestjs/common';
+import { Controller, Inject, ValidationPipe, UsePipes, Get, Param, ParseIntPipe, Post, HttpCode, HttpStatus, UseInterceptors, Body, UploadedFile, Put, BadRequestException, ConflictException } from '@nestjs/common';
 import { ProfessionalService } from '../services/professional.service';
 import { ProfessionalEntity } from '../entities/professional.entity';
 import { CreateProfessionalDto } from '../dto/professionalCreate.dto';
 import { UpdateProfessionalDto } from '../dto/professionalUpdate.dto';
 import { ApiControllerResponse } from '../../../shared/interfaces/api-response.interface';
 import { BaseCrudController } from '../../../shared/controllers/crud.controller';
-import { professionalCreateSchema } from '../schemas/professionalCreate.schema';
-import { professionalUpdateSchema } from '../schemas/professionalUpdate.schema';
-import Joi from 'joi';
+import { createProfessionalSchema } from '../schemas/professionalCreate.schema';
+import { updateProfessionalSchema } from '../schemas/professionalUpdate.schema';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UseJoiValidationPipe } from '~/api/shared/utils/pipes/use-joi.pipe';
+import Joi from 'joi';
 
 @Controller('professional')
 @UsePipes(new ValidationPipe({
@@ -19,32 +19,106 @@ import { UseJoiValidationPipe } from '~/api/shared/utils/pipes/use-joi.pipe';
   transformOptions: { enableImplicitConversion: true }
 }))
 export class ProfessionalController extends BaseCrudController<ProfessionalEntity, CreateProfessionalDto, UpdateProfessionalDto> {
-  public professionalCreateSchema = professionalCreateSchema;
-  public professionalUpdateSchema = professionalUpdateSchema;
+  public createProfessionalSchema = createProfessionalSchema;
+  public updateProfessionalSchema = updateProfessionalSchema;
 
   constructor(
     @Inject(ProfessionalService)
     private readonly professionalService: ProfessionalService
   ) {
-    super(professionalService, 'professional', professionalCreateSchema, professionalUpdateSchema);
+    super(professionalService, 'professional', createProfessionalSchema, updateProfessionalSchema);
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(FileInterceptor('photo'))
-  @UseJoiValidationPipe(instance => instance.professionalCreateSchema)
-  async create(@Body() createProfessionalDto: CreateProfessionalDto, @UploadedFile() file?: Express.Multer.File): Promise<ApiControllerResponse<ProfessionalEntity>> {
-    if (file) {
-      const base64Image = file.buffer.toString('base64');
-      const format = `data:${file.mimetype};base64,`;
-      createProfessionalDto['TxPhoto'] = format + base64Image;
+  async create(@Body() createProfessionalDto: any, @UploadedFile() file?: Express.Multer.File): Promise<ApiControllerResponse<ProfessionalEntity>> {
+    if (createProfessionalDto.BussinessHours && typeof createProfessionalDto.BussinessHours === 'string') {
+      try {
+        createProfessionalDto.BussinessHours = JSON.parse(createProfessionalDto.BussinessHours);
+        console.log('BussinessHours procesado:', createProfessionalDto.BussinessHours);
+      } catch (error) {
+        throw new BadRequestException(
+          [{
+            code: 'FORMATO_INCORRECTO',
+            message: 'El formato de BussinessHours es inválido. Debe ser un JSON válido.',
+            field: 'BussinessHours'
+          }],
+          'Formato de BussinessHours inválido'
+        );
+      }
     }
+    
+    if (createProfessionalDto.Services && typeof createProfessionalDto.Services === 'string') {
+      try {
+        createProfessionalDto.Services = JSON.parse(createProfessionalDto.Services);
+        console.log('Services procesado:', createProfessionalDto.Services);
+      } catch (error) {
+        throw new BadRequestException(
+          [{
+            code: 'FORMATO_INCORRECTO',
+            message: 'El formato de Services es inválido. Debe ser un JSON válido.',
+            field: 'Services'
+          }],
+          'Formato de Services inválido'
+        );
+      }
+    }
+    try {
+      if (file) {
+        const base64Image = file.buffer.toString('base64');
+        const format = `data:${file.mimetype};base64,`;
+        createProfessionalDto['TxPhoto'] = format + base64Image;
+      }
 
-    const data = await this.professionalService.create(createProfessionalDto);
-    return {
-      message: `${this.entityName} creado de forma exitosa`,
-      data: data
-    };
+      if (createProfessionalDto['BussinessHours'] && typeof createProfessionalDto['BussinessHours'] === 'string') {
+        try {
+          createProfessionalDto['BussinessHours'] = JSON.parse(createProfessionalDto['BussinessHours']);
+        } catch (error) {
+          throw new BadRequestException(
+            [{
+              code: 'FORMATO_INCORRECTO',
+              message: 'El formato de BussinessHours es inválido. Debe ser un JSON válido.',
+              field: 'BussinessHours'
+            }],
+            'Formato de BussinessHours inválido'
+          );
+        }
+      }
+
+      if (createProfessionalDto['Services'] && typeof createProfessionalDto['Services'] === 'string') {
+        try {
+          createProfessionalDto['Services'] = JSON.parse(createProfessionalDto['Services']);
+        } catch (error) {
+          throw new BadRequestException(
+            [{
+              code: 'FORMATO_INCORRECTO',
+              message: 'El formato de Services es inválido. Debe ser un JSON válido.',
+              field: 'Services'
+            }],
+            'Formato de Services inválido'
+          );
+        }
+      }
+
+      const data = await this.professionalService.create(createProfessionalDto);
+      return {
+        message: `${this.entityName} creado de forma exitosa`,
+        data: data
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException || error instanceof ConflictException) {
+        throw error;
+      }
+      throw new BadRequestException(
+        [{
+          code: 'ERROR_CREACION_PROFESIONAL',
+          message: `Error al crear profesional: ${error.message || 'Error desconocido'}`,
+          field: 'professional'
+        }],
+        'Error al crear profesional'
+      );
+    }
   }
 
   @Get('specialization/:specialization')
@@ -60,8 +134,7 @@ export class ProfessionalController extends BaseCrudController<ProfessionalEntit
   @Put(':id')
   @HttpCode(HttpStatus.OK)
   @UseInterceptors(FileInterceptor('photo'))
-  @UseJoiValidationPipe(instance => instance.professionalUpdateSchema)
-  async update(@Param('id', ParseIntPipe) id: number, @Body() updateProfessionalDto: UpdateProfessionalDto, @UploadedFile() file?: Express.Multer.File): Promise<ApiControllerResponse<ProfessionalEntity>> {
+  async update(@Param('id', ParseIntPipe) id: number, @Body() updateProfessionalDto: any, @UploadedFile() file?: Express.Multer.File): Promise<ApiControllerResponse<ProfessionalEntity>> {
     if (isNaN(id) || id <= 0) {
       throw new BadRequestException(`ID inválido: ${id}. El ID debe ser un número positivo.`);
     }
@@ -70,6 +143,36 @@ export class ProfessionalController extends BaseCrudController<ProfessionalEntit
       const base64Image = file.buffer.toString('base64');
       const format = `data:${file.mimetype};base64,`;
       updateProfessionalDto['TxPhoto'] = format + base64Image;
+    }
+    
+    if (updateProfessionalDto.BussinessHours && typeof updateProfessionalDto.BussinessHours === 'string') {
+      try {
+        updateProfessionalDto.BussinessHours = JSON.parse(updateProfessionalDto.BussinessHours);
+      } catch (error) {
+        throw new BadRequestException(
+          [{
+            code: 'FORMATO_INCORRECTO',
+            message: 'El formato de BussinessHours es inválido. Debe ser un JSON válido.',
+            field: 'BussinessHours'
+          }],
+          'Formato de BussinessHours inválido'
+        );
+      }
+    }
+    
+    if (updateProfessionalDto.Services && typeof updateProfessionalDto.Services === 'string') {
+      try {
+        updateProfessionalDto.Services = JSON.parse(updateProfessionalDto.Services);
+      } catch (error) {
+        throw new BadRequestException(
+          [{
+            code: 'FORMATO_INCORRECTO',
+            message: 'El formato de Services es inválido. Debe ser un JSON válido.',
+            field: 'Services'
+          }],
+          'Formato de Services inválido'
+        );
+      }
     }
 
     const data = await this.professionalService.update(id, updateProfessionalDto);

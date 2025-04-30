@@ -52,21 +52,11 @@ export class ClientService extends BaseCrudService<ClientEntity, CreateClientDto
         }
     }
 
-    protected async prepareCreateData(createClientDto: CreateClientDto): Promise<Partial<ClientEntity>> {
-        const hashedPassword = await bcrypt.hash(createClientDto.VcPassword, 10);
-
-        return {
-            ...createClientDto,
-            VcPassword: hashedPassword
-        };
-    }
-
     async create(createClientDto: CreateClientDto): Promise<ClientEntity> {
         try {
             await this.validateCreate(createClientDto);
 
-            const preparedData = await this.prepareCreateData(createClientDto);
-            const entity = this.clientRepository.create(preparedData as any);
+            const entity = this.clientRepository.create(createClientDto);
             const savedEntity = await this.clientRepository.save(entity as any);
 
             await this.afterCreate(savedEntity as ClientEntity);
@@ -114,16 +104,6 @@ export class ClientService extends BaseCrudService<ClientEntity, CreateClientDto
                 throw new ConflictException(errors, "There is already a customer with these data");
             }
         }
-    }
-
-    protected async prepareUpdateData(entity: ClientEntity, updateClientDto: UpdateClientDto): Promise<Partial<ClientEntity>> {
-        const preparedData = { ...updateClientDto };
-
-        if (preparedData.VcPassword) {
-            preparedData.VcPassword = await bcrypt.hash(preparedData.VcPassword, 10);
-        }
-
-        return preparedData;
     }
 
     async update(id: number, updateClientDto: UpdateClientDto): Promise<ClientEntity> {

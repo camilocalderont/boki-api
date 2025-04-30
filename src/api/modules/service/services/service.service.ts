@@ -1,17 +1,23 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Injectable, NotFoundException, ConflictException, BadRequestException, Inject } from '@nestjs/common';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { ServiceEntity } from '../entities/service.entity';
+import { ServiceStageEntity } from '../entities/serviceStage.entity';
 import { CreateServiceDto } from '../dto/serviceCreate.dto';
 import { UpdateServiceDto } from '../dto/serviceUpdate.dto';
 import { BaseCrudService } from '../../../shared/services/crud.services';
 import { ApiErrorItem } from '~/api/shared/interfaces/api-response.interface';
+import { ServiceStageService } from './serviceStage.service';
 
 @Injectable()
 export class ServiceService extends BaseCrudService<ServiceEntity, CreateServiceDto, UpdateServiceDto> {
     constructor(
         @InjectRepository(ServiceEntity)
-        private readonly serviceRepository: Repository<ServiceEntity>
+        private readonly serviceRepository: Repository<ServiceEntity>,
+        @InjectDataSource()
+        private readonly dataSource: DataSource,
+        @Inject(ServiceStageService)
+        private readonly serviceStageService: ServiceStageService
     ) {
         super(serviceRepository);
     }
@@ -58,18 +64,36 @@ export class ServiceService extends BaseCrudService<ServiceEntity, CreateService
     }
 
     async create(createServiceDto: CreateServiceDto): Promise<ServiceEntity> {
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
         try {
             await this.validateCreate(createServiceDto);
-            const entity = this.serviceRepository.create(createServiceDto);
-            const savedEntity = await this.serviceRepository.save(entity);
+            const { ServiceStages, ...serviceData } = createServiceDto;
+            const entity = this.serviceRepository.create(serviceData);
+            const savedEntity = await queryRunner.manager.save(entity);
+
+            if (ServiceStages && Array.isArray(ServiceStages) && ServiceStages.length > 0) {
+                const serviceStageEntities = await this.serviceStageService.createMany(
+                    queryRunner,
+                    savedEntity.Id,
+                    ServiceStages
+                );
+                savedEntity.ServiceStages = serviceStageEntities;
+            }
+
+            await queryRunner.commitTransaction();
             await this.afterCreate(savedEntity);
             return savedEntity;
-            
+
         } catch (error) {
+            await queryRunner.rollbackTransaction();
+
             if (error instanceof BadRequestException || error instanceof ConflictException) {
                 throw error;
             }
-           
+
             if (error.code === '23505') {
                 throw new ConflictException(
                     [{
@@ -81,14 +105,23 @@ export class ServiceService extends BaseCrudService<ServiceEntity, CreateService
                 );
             }
 
-            throw new BadRequestException('Ha ocurrido un error inesperado', error);
+            throw new BadRequestException(
+                [{
+                    code: 'ERROR_CREACION_SERVICIO',
+                    message: `Ha ocurrido un error inesperado: ${error.message || 'Error desconocido'}`,
+                    field: 'service'
+                }],
+                'Ha ocurrido un error inesperado'
+            );
+        } finally {
+            await queryRunner.release();
         }
     }
 
 
     protected async validateUpdate(id: number, updateServiceDto: UpdateServiceDto): Promise<void> {
         const errors: ApiErrorItem[] = [];
-        
+
         let service: ServiceEntity;
         try {
             service = await this.findOne(id);
@@ -104,7 +137,7 @@ export class ServiceService extends BaseCrudService<ServiceEntity, CreateService
             }
             throw error;
         }
-        
+
         if (updateServiceDto.VcName && updateServiceDto.VcName !== service.VcName) {
             const existingService = await this.serviceRepository.findOne({
                 where: { VcName: updateServiceDto.VcName }
@@ -150,16 +183,59 @@ export class ServiceService extends BaseCrudService<ServiceEntity, CreateService
     }
 
     async update(id: number, updateServiceDto: UpdateServiceDto): Promise<ServiceEntity> {
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
         try {
             await this.validateUpdate(id, updateServiceDto);
-            const existingEntity = await this.serviceRepository.findOne({ where: { Id: id } });
-            
-            Object.assign(existingEntity, updateServiceDto);
-            const updatedEntity = await this.serviceRepository.save(existingEntity);
+            const { ServiceStages, ...serviceData } = updateServiceDto;
+            const existingEntity = await this.serviceRepository.findOne({
+                where: { Id: id },
+                relations: ['ServiceStages']
+            });
+
+            if (!existingEntity) {
+                throw new NotFoundException([
+                    {
+                        code: 'SERVICIO_NO_EXISTE',
+                        message: `El servicio con ID ${id} no existe`,
+                        field: 'id'
+                    }
+                ], `El servicio con ID ${id} no existe`);
+            }
+
+            Object.assign(existingEntity, serviceData);
+            const updatedEntity = await queryRunner.manager.save(existingEntity);
+
+            if (ServiceStages && Array.isArray(ServiceStages) && ServiceStages.length > 0) {
+                if (existingEntity.ServiceStages && existingEntity.ServiceStages.length > 0) {
+                    await queryRunner.manager.delete('ServiceStage', { ServiceId: id });
+                }
+
+                const createDtos = ServiceStages.map(stage => ({
+                    ISequence: stage.ISequence,
+                    IDurationMinutes: stage.IDurationMinutes,
+                    VcDescription: stage.VcDescription,
+                    BIsProfessionalBussy: stage.BIsProfessionalBussy,
+                    BIsActive: stage.BIsActive !== undefined ? stage.BIsActive : true
+                }));
+                
+                const serviceStageEntities = await this.serviceStageService.createMany(
+                    queryRunner,
+                    updatedEntity.Id,
+                    createDtos
+                );
+                updatedEntity.ServiceStages = serviceStageEntities;
+            }
+
+            await queryRunner.commitTransaction();
             return updatedEntity;
         } catch (error) {
-            if (error instanceof NotFoundException || 
-                error instanceof BadRequestException || 
+            await queryRunner.rollbackTransaction();
+
+            if (error instanceof NotFoundException ||
+                error instanceof BadRequestException ||
                 error instanceof ConflictException) {
                 throw error;
             }
@@ -174,14 +250,16 @@ export class ServiceService extends BaseCrudService<ServiceEntity, CreateService
                     'Ya existe un servicio con estos datos'
                 );
             }
-            
+
             throw new BadRequestException([
                 {
                     code: 'ERROR_ACTUALIZAR',
-                    message: 'Ha ocurrido un error al actualizar el servicio',
-                    field: 'unknown'
+                    message: `Ha ocurrido un error al actualizar el servicio: ${error.message || 'Error desconocido'}`,
+                    field: 'service'
                 }
             ], 'Ha ocurrido un error inesperado');
+        } finally {
+            await queryRunner.release();
         }
     }
 

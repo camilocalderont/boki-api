@@ -1,3 +1,5 @@
+import { UpdateServiceStageDto } from "./serviceStageUpdate.dto";
+
 export class UpdateServiceDto {
     VcName?: string;
     VcDescription?: string;
@@ -8,5 +10,6 @@ export class UpdateServiceDto {
     VcTime?: string;
     CompanyId?: number;
     CategoryId?: number;
-    TxPicture?: string; 
+    TxPicture?: string;
+    ServiceStages?: UpdateServiceStageDto[];
 }

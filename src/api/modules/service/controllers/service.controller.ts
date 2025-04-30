@@ -35,10 +35,42 @@ export class ServiceController extends BaseCrudController<ServiceEntity, CreateS
     @UseInterceptors(FileInterceptor('picture'))
     @UseJoiValidationPipe(instance => instance.createServiceSchema)
     async create(@Body() createServiceDto: CreateServiceDto, @UploadedFile() file?: Express.Multer.File): Promise<ApiControllerResponse<ServiceEntity>> {
+        if (createServiceDto.ServiceStages && typeof createServiceDto.ServiceStages === 'string') {
+            try {
+                createServiceDto.ServiceStages = JSON.parse(createServiceDto.ServiceStages);
+                console.log('ServiceStages procesado:', createServiceDto.ServiceStages);
+            } catch (error) {
+                throw new BadRequestException(
+                    [{
+                        code: 'FORMATO_INCORRECTO',
+                        message: 'El formato de ServiceStages es inválido. Debe ser un JSON válido.',
+                        field: 'ServiceStages'
+                    }],
+                    'Formato de ServiceStages inválido'
+                );
+            }
+        }
+        
         if (file) {
             const base64Image = file.buffer.toString('base64');
             const format = `data:${file.mimetype};base64,`;
             createServiceDto['TxPicture'] = format + base64Image;
+        }
+
+        if(createServiceDto['ServiceStages'] && typeof createServiceDto['ServiceStages'] === 'string') {
+            try {
+                createServiceDto['ServiceStages'] = JSON.parse(createServiceDto['ServiceStages']);
+                console.log('ServiceStages procesado:', createServiceDto['ServiceStages']);
+            } catch (error) {
+                throw new BadRequestException(
+                    [{
+                        code: 'FORMATO_INCORRECTO',
+                        message: 'El formato de ServiceStages es inválido. Debe ser un JSON válido.',
+                        field: 'ServiceStages'
+                    }],
+                    'Formato de ServiceStages inválido'
+                );
+            }
         }
 
         const data = await this.serviceService.create(createServiceDto);
@@ -69,6 +101,22 @@ export class ServiceController extends BaseCrudController<ServiceEntity, CreateS
     ): Promise<ApiControllerResponse<ServiceEntity>> {
         if (isNaN(id) || id <= 0) {
             throw new BadRequestException(`ID inválido: ${id}. El ID debe ser un número positivo.`);
+        }
+
+        if (updateServiceDto.ServiceStages && typeof updateServiceDto.ServiceStages === 'string') {
+            try {
+                updateServiceDto.ServiceStages = JSON.parse(updateServiceDto.ServiceStages);
+                console.log('ServiceStages procesado:', updateServiceDto.ServiceStages);
+            } catch (error) {
+                throw new BadRequestException(
+                    [{
+                        code: 'FORMATO_INCORRECTO',
+                        message: 'El formato de ServiceStages es inválido. Debe ser un JSON válido.',
+                        field: 'ServiceStages'
+                    }],
+                    'Formato de ServiceStages inválido'
+                );
+            }
         }
 
         if (file) {

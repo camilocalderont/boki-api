@@ -1,4 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { ProfessionalServiceEntity } from './professionalService.entity';
+import { ProfessionalBussinessHourEntity } from './professionalBussinessHour.entity';
 
 @Entity('Professional')
 export class ProfessionalEntity {
@@ -46,4 +48,10 @@ export class ProfessionalEntity {
 
     @UpdateDateColumn({ name: 'updated_at' })
     updated_at: Date;
+
+    @OneToMany(() => ProfessionalServiceEntity, professionalService => professionalService.Professional)
+    Services: ProfessionalServiceEntity[];
+
+    @OneToMany(() => ProfessionalBussinessHourEntity, professionalBussinessHour => professionalBussinessHour.Professional)
+    BussinessHours: ProfessionalBussinessHourEntity[];
 }

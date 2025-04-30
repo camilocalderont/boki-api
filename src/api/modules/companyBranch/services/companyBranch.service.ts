@@ -441,7 +441,7 @@ export class CompanyBranchService extends BaseCrudService<CompanyBranchEntity, C
             company: {
                 Id: company.Id,
                 VcName: company.VcName,
-                VcLogo: company.VcLogo
+                TxLogo: company.TxLogo
             },
             branches: branches.map(branch => ({
                 Id: branch.Id,
@@ -497,7 +497,7 @@ export class CompanyBranchService extends BaseCrudService<CompanyBranchEntity, C
             company: {
                 Id: company.Id,
                 VcName: company.VcName,
-                VcLogo: company.VcLogo
+                TxLogo: company.TxLogo
             },
             branch: {
                 Id: branch.Id,

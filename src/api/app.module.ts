@@ -11,6 +11,7 @@ import { ProfessionalModule } from './modules/professional/professional.module';
 import { CategoryServiceModule } from './modules/categoryService/categoryService.module';
 import { ServiceModule } from './modules/service/service.module';
 import { ApiTokenGuard } from './shared/utils/api-token.guard';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ApiTokenGuard } from './shared/utils/api-token.guard';
     CategoryServiceModule,
     ProfessionalModule,
     ServiceModule,
+    UsersModule
   ],
   controllers: [],
   providers: [
