@@ -3,6 +3,7 @@ import { CompanyEntity } from '../../company/entities/company.entity';
 import { CategoryServiceEntity } from '../../categoryService/entities/categoryService.entity';
 import { ServiceStageEntity } from './serviceStage.entity';
 import { ProfessionalServiceEntity } from '../../professional/entities/professionalService.entity';
+import { AppointmentEntity } from '../../appointment/entities/appointment.entity';
 
 @Entity('Service')
 export class ServiceEntity {
@@ -60,4 +61,7 @@ export class ServiceEntity {
 
     @OneToMany(() => ProfessionalServiceEntity, professionalService => professionalService.Service)
     ProfessionalServices: ProfessionalServiceEntity[];
+
+    @OneToMany(() => AppointmentEntity, appointment => appointment.Service)
+    Appointments: AppointmentEntity[];
 }

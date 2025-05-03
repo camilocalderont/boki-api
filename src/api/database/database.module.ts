@@ -13,6 +13,10 @@ import { ProfessionalServiceEntity } from '../modules/professional/entities/prof
 import { CategoryServiceEntity } from '../modules/categoryService/entities/categoryService.entity';
 import { ServiceEntity } from '../modules/service/entities/service.entity';
 import { ServiceStageEntity } from '../modules/service/entities/serviceStage.entity';
+import { StateEntity } from '../modules/appointment/entities/state.entity';
+import { AppointmentStateEntity } from '../modules/appointment/entities/appointmentState.entity';
+import { AppointmentEntity } from '../modules/appointment/entities/appointment.entity';
+import { AppointmentStageEntity } from '../modules/appointment/entities/appointmentStage.entity';
 
 import * as dotenv from 'dotenv';
 dotenv.config();
@@ -24,7 +28,7 @@ export const AppDataSource = new DataSource({
   username: process.env.POSTGRES_DB_USER,
   password: process.env.POSTGRES_DB_PASSWORD,
   database: process.env.POSTGRES_DB_NAME,
-  entities: [ClientEntity, UsersEntity, CompanyEntity, CompanyBlockedTimeEntity, CompanyBranchEntity, CompanyBranchRoomEntity, ProfessionalEntity, ProfessionalBussinessHourEntity, ProfessionalServiceEntity, CategoryServiceEntity, ServiceEntity, ServiceStageEntity],
+  entities: [ClientEntity, UsersEntity, CompanyEntity, CompanyBlockedTimeEntity, CompanyBranchEntity, CompanyBranchRoomEntity, ProfessionalEntity, ProfessionalBussinessHourEntity, ProfessionalServiceEntity, CategoryServiceEntity, ServiceEntity, ServiceStageEntity, StateEntity, AppointmentStateEntity, AppointmentEntity, AppointmentStageEntity],
   //comando para generar migraciones npx typeorm-ts-node-commonjs migration:generate src/api/database/migrations/crateNombreTable -d src/api/database/database.module.ts
   migrations: [join(__dirname, 'migrations', '**/*.{ts,js}')],
   logging: true,
