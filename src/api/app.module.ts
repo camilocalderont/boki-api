@@ -14,7 +14,7 @@ import { ApiTokenGuard } from './shared/utils/api-token.guard';
 import { UsersModule } from './modules/users/users.module';
 import { AppointmentModule } from './modules/appointment/appointment.module';
 import { TagsModule } from './modules/tags/tags.module';
-
+import { FaqsModule } from './modules/faqs/faqs.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -27,7 +27,8 @@ import { TagsModule } from './modules/tags/tags.module';
     ServiceModule,
     UsersModule,
     AppointmentModule,
-    TagsModule
+    TagsModule,
+    FaqsModule
   ],
   controllers: [],
   providers: [

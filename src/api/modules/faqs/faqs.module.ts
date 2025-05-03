@@ -4,10 +4,12 @@ import { FaqsController } from './controllers/faqs.controller';
 import { FaqsService } from './services/faqs.service';
 import { FaqsEntity } from './entities/faqs.entity';
 import { FaqsRepository } from './repositories/faqs.repository';
+import { CompanyEntity } from '../company/entities/company.entity';
+import { CategoryServiceEntity } from '../categoryService/entities/categoryService.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([FaqsEntity]),
+    TypeOrmModule.forFeature([FaqsEntity, CompanyEntity, CategoryServiceEntity]),
   ],
   controllers: [FaqsController],
   providers: [
