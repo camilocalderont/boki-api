@@ -13,6 +13,7 @@ import { ServiceModule } from './modules/service/service.module';
 import { ApiTokenGuard } from './shared/utils/api-token.guard';
 import { UsersModule } from './modules/users/users.module';
 import { AppointmentModule } from './modules/appointment/appointment.module';
+import { TagsModule } from './modules/tags/tags.module';
 
 @Module({
   imports: [
@@ -25,7 +26,8 @@ import { AppointmentModule } from './modules/appointment/appointment.module';
     ProfessionalModule,
     ServiceModule,
     UsersModule,
-    AppointmentModule
+    AppointmentModule,
+    TagsModule
   ],
   controllers: [],
   providers: [

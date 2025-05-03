@@ -15,6 +15,9 @@ export class CategoryServiceEntity {
     @UpdateDateColumn({ name: 'updated_at' })
     updated_at: Date;
 
+    @Column({ name: 'b_is_service', type: 'boolean', default: false })
+    BIsService: boolean;
+
     @OneToMany(() => ServiceEntity, service => service.Category)
     Services: ServiceEntity[];
 }
