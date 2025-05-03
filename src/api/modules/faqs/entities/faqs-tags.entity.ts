@@ -6,10 +6,10 @@ export class FaqsTagsEntity {
     @PrimaryGeneratedColumn()
     Id: number;
 
-    @Column({ name: 'faqs_id' })
+    @Column({ name: 'faqs_id', type: 'int' })
     FaqsId: number;
 
-    @Column({ name: 'tags_id' })
+    @Column({ name: 'tags_id', type: 'int' })
     TagsId: number;
 
     @ManyToOne(() => FaqsEntity, faq => faq.Id)

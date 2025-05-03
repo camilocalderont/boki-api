@@ -14,10 +14,10 @@ export class FaqsEntity {
     @Column({ name: 'vc_answer', type: 'text' })
     VcAnswer: string;
 
-    @Column({ name: 'company_id' })
+    @Column({ name: 'company_id', type: 'int' })
     CompanyId: number;
 
-    @Column({ name: 'category_service_id' })
+    @Column({ name: 'category_service_id', type: 'int' })
     CategoryServiceId: number;
 
     @ManyToOne(() => CompanyEntity, company => company.Id)

@@ -11,7 +11,7 @@ export const configApi = {
 
     PORT: process.env.PORT,
     API_PORT: process.env.PORT_API,
-    JWT_SECRET: process.env.JWT_TOKEN,
+    JWT_SECRET: process.env.API_TOKEN,
     VERSION: process.env.VERSION,
 
     NUMBER_ID: process.env.NUMBER_ID,
