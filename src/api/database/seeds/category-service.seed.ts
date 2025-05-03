@@ -22,7 +22,7 @@ export const categoryServiceSeed = async (dataSource: DataSource): Promise<void>
     ];
 
     try {
-        await repository.save(categoriesData);
+        await repository.insert(categoriesData);
         console.log('CategoryService seeded successfully.');
     } catch (error) {
         console.error('Error seeding CategoryService:', error);

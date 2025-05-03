@@ -44,8 +44,8 @@ export const tagsSeed = async (dataSource: DataSource): Promise<void> => {
     ];
 
     try {
-        // Usar save para insertar o actualizar si fuera necesario (aunque la comprobación inicial evita re-inserción)
-        await repository.save(tagsData);
+        // Usar insert para insertar o actualizar si fuera necesario (aunque la comprobación inicial evita re-inserción)
+        await repository.insert(tagsData);
         console.log(`Tags seeded successfully (${tagsData.length} tags).`);
     } catch (error) {
         console.error('Error seeding Tags:', error);

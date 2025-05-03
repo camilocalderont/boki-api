@@ -48,8 +48,8 @@ export const faqsSeed = async (dataSource: DataSource): Promise<void> => {
     ];
 
     try {
-        // Guardar los datos base de las FAQs
-        await repository.save(faqsData);
+        // Guardar los datos base de las FAQs usando insert para mantener los IDs
+        await repository.insert(faqsData);
         console.log(`Faqs seeded successfully (${faqsData.length} faqs).`);
     } catch (error) {
         console.error('Error seeding Faqs:', error);

@@ -20,5 +20,5 @@ export const statesSeed = async (dataSource: DataSource): Promise<void> => {
             VcName: 'Reagendar'
         }
     ];
-    await stateRepository.save(states);
+    await stateRepository.insert(states);
 };
