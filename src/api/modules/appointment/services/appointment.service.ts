@@ -292,4 +292,55 @@ export class AppointmentService extends BaseCrudService<AppointmentEntity, Creat
     }
   }
 
+  async remove(id: number): Promise<void> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const appointment = await this.appointmentRepository.findOne({
+        where: { Id: id },
+        relations: ['AppointmentStages', 'AppointmentStates']
+      });
+      
+      if (!appointment) {
+        throw new NotFoundException([
+          {
+            code: 'CITA_NO_EXISTE',
+            message: `La cita con ID ${id} no existe`,
+            field: 'id'
+          }
+        ], `La cita con ID ${id} no existe`);
+      }
+
+      if (appointment.AppointmentStages && appointment.AppointmentStages.length > 0) {
+        await queryRunner.manager.delete('AppointmentStage', { AppointmentId: id });
+      }
+
+      if (appointment.AppointmentStates && appointment.AppointmentStates.length > 0) {
+        await queryRunner.manager.delete('AppointmentState', { AppointmentId: id });
+      }
+
+      await queryRunner.manager.delete('Appointment', { Id: id });
+      
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      
+      throw new BadRequestException(
+        [{
+          code: 'ERROR_ELIMINACION_CITA',
+          message: `Ha ocurrido un error al eliminar la cita: ${error.message || 'Error desconocido'}`,
+          field: 'appointment'
+        }],
+        'Ha ocurrido un error al eliminar la cita'
+      );
+    } finally {
+      await queryRunner.release();
+    }
+  }
 }
