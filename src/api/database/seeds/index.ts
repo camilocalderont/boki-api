@@ -17,19 +17,20 @@ export const runSeeds = async (dataSource: DataSource): Promise<void> => {
         await dataSource.initialize();
     }
 
+    // eslint-disable-next-line no-useless-catch
     try {
         await statesSeed(dataSource);
         await categoryServiceSeed(dataSource);
         await tagsSeed(dataSource);
         await clientSeed(dataSource);
-        await companySeed(dataSource);        
-        await serviceSeed(dataSource);        
-        await companyBranchRoomSeed(dataSource); 
-        await companyBlockedTimeSeed(dataSource); 
-        await professionalSeed(dataSource);   
+        await companySeed(dataSource);
+        await serviceSeed(dataSource);
+        await companyBranchRoomSeed(dataSource);
+        await companyBlockedTimeSeed(dataSource);
+        await professionalSeed(dataSource);
         await faqsSeed(dataSource);
         await faqsTagsSeed(dataSource);
-        await appointmentSeed(dataSource);    
+        await appointmentSeed(dataSource);
     } catch (error) {
         throw error;
     }
