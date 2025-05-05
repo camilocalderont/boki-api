@@ -10,9 +10,9 @@ export const configApi = {
     POSTGRES_DB_NAME: process.env.POSTGRES_DB_NAME,
 
     PORT: process.env.PORT,
-    API_PORT: process.env.PORT_API,
+    API_PORT: process.env.API_PORT,
     JWT_SECRET: process.env.API_TOKEN,
-    VERSION: process.env.VERSION,
+    VERSION: process.env.API_VERSION,
 
     NUMBER_ID: process.env.NUMBER_ID,
     VERIFY_TOKEN: process.env.VERIFY_TOKEN

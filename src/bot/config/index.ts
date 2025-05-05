@@ -26,5 +26,11 @@ export const config = {
     LLM_MODEL: process.env.LLM_MODEL,
     LLM_APIKEY: process.env.LLM_APIKEY,
 
+    //API
+    API_URL: process.env.API_URL,
+    API_TOKEN: process.env.API_TOKEN,
+    API_VERSION: process.env.API_VERSION,
+    API_PORT: process.env.API_PORT,
+
 
 };

@@ -1,10 +1,10 @@
 import { createBot } from '@builderbot/bot';
 import { PostgreSQLAdapter as Database } from '@builderbot/database-postgres';
-//import { provider } from './provider';
+import { provider } from './provider';
 import { config } from './config';
 import templates from './templates';
 //import { provider } from './provider/meta';
-import { provider } from './provider/twilio';
+//import { provider } from './provider/twilio';
 
 const BOT_PORT = config.PORT || 3001;
 
