@@ -1,11 +1,12 @@
 import { addKeyword, EVENTS } from "@builderbot/bot";
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import aiServices from "../services/llm/aiServices";
+import { config } from "../config";
 
 const mainFlow = addKeyword(EVENTS.WELCOME)
     .addAnswer(`🙌 Hey Hola bienvenido a *Bokibot*, soy tu asistente virtual. En que puedo ayudarte?  este es nuestro *Menu*`, {
         delay: 100,
-        //media: "https://administradorpandora.bokibot.com/assets/pages/img/login/bg1.jpg"
     },
     async (ctx, { gotoFlow }) => {
         console.log(JSON.stringify(ctx));
@@ -26,14 +27,19 @@ const flowServicios = addKeyword(EVENTS.ACTION)
 
 
 const flowConsultas = addKeyword(EVENTS.ACTION)
-    .addAnswer('Para hacer una consulta, puedes hacerlo en nuestro sitio web: ww.bokibot.com')
-    .addAnswer("Hace tu consulta", { capture: true }, async (ctx, ctxFn) => {
+    .addAnswer("Hace tu consulta", { capture: true }, async (ctx, { endFlow }) => {
         console.log(ctx.body);
-        await ctxFn.flowDynamic("Te estamos respondiendo con AI");
-        /*const prompt = promptConsultas
-        const consulta = ctx.body
-        const answer = await chat(prompt, consulta)
-        await ctxFn.flowDynamic(answer.content)*/
+        const ai = new aiServices(config.LLM_APIKEY);
+
+        const prompt = "Eres un asistente de IA que responde preguntas de forma amigable y clara. Responde las preguntas de forma clara y concisa. Si la pregunta no es clara, pregunta para que puedas responderla de forma clara y concisa.";
+        const consulta = [
+            {
+                role: "user",
+                content: prompt
+            }
+        ];
+        const response = await ai.chat(prompt, consulta)
+        return endFlow(response);
     }
 );
 
