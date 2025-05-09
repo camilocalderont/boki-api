@@ -1,4 +1,4 @@
-import { Controller, Inject, ValidationPipe, UsePipes, Get, Param, ParseIntPipe, Post, HttpCode, HttpStatus, UseInterceptors, Body, UploadedFile, Put, BadRequestException, ConflictException } from '@nestjs/common';
+import { Controller, Inject, ValidationPipe, UsePipes, Get, Param, ParseIntPipe, Post, HttpCode, HttpStatus, UseInterceptors, Body, UploadedFile, Put, BadRequestException, ConflictException, Query } from '@nestjs/common';
 import { ProfessionalService } from '../services/professional.service';
 import { ProfessionalEntity } from '../entities/professional.entity';
 import { CreateProfessionalDto } from '../dto/professionalCreate.dto';
@@ -179,6 +179,63 @@ export class ProfessionalController extends BaseCrudController<ProfessionalEntit
     return {
       message: `${this.entityName} actualizado de forma exitosa`,
       data: data
+    };
+  }
+
+  @Get('service/:serviceId')
+  async findByServiceId(@Param('serviceId', ParseIntPipe) serviceId: number): Promise<ApiControllerResponse<ProfessionalEntity[]>> {
+    if (isNaN(serviceId) || serviceId <= 0) {
+      throw new BadRequestException(`ID de servicio inválido: ${serviceId}. El ID debe ser un número positivo.`);
+    }
+    
+    const professionals = await this.professionalService.findByServiceId(serviceId);
+    return {
+      message: `Profesionales encontrados para el servicio con ID: ${serviceId}`,
+      data: professionals
+    };
+  }
+
+  @Get(':professionalId/general-availability')
+  async getGeneralAvailability(@Param('professionalId', ParseIntPipe) professionalId: number): Promise<ApiControllerResponse<any[]>> {
+    if (isNaN(professionalId) || professionalId <= 0) {
+      throw new BadRequestException(`ID de profesional inválido: ${professionalId}. El ID debe ser un número positivo.`);
+    }
+    
+    const availability = await this.professionalService.findGeneralAvailability(professionalId);
+    return {
+      message: `Disponibilidad general del profesional con ID: ${professionalId}`,
+      data: availability
+    };
+  }
+
+  @Get(':professionalId/available-slots')
+  async getAvailableSlots(@Param('professionalId', ParseIntPipe) professionalId: number, @Query('serviceId', ParseIntPipe) serviceId: number, @Query('date') dateString: string): Promise<ApiControllerResponse<any[]>> {
+    if (isNaN(professionalId) || professionalId <= 0) {
+      throw new BadRequestException(`ID de profesional inválido: ${professionalId}. El ID debe ser un número positivo.`);
+    }
+
+    if (isNaN(serviceId) || serviceId <= 0) {
+      throw new BadRequestException(`ID de servicio inválido: ${serviceId}. El ID debe ser un número positivo.`);
+    }
+    
+    if (!dateString || dateString.trim() === '') {
+      throw new BadRequestException('La fecha es obligatoria. Debe proporcionar una fecha válida (YYYY-MM-DD).');
+    }
+    
+    let date: Date;
+    try {
+      date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        throw new Error('Fecha inválida');
+      }
+    } catch (error) {
+      throw new BadRequestException(`Formato de fecha inválido: ${dateString}. Debe ser una fecha válida (YYYY-MM-DD).`);
+    }
+    
+    const availableSlots = await this.professionalService.findAvailableSlots(professionalId, serviceId, date);
+    return {
+      message: `Espacios disponibles para el profesional con ID: ${professionalId}, servicio con ID: ${serviceId} y fecha: ${dateString}`,
+      data: availableSlots
     };
   }
 }

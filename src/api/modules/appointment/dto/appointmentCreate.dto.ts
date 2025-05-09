@@ -6,10 +6,8 @@ export class CreateAppointmentDto {
     ServiceId: number;
     ProfessionalId: number;
     DtDate: Date;
-    TTime: string;
+    TStartTime: string;
     CurrentStateId: number;
     BIsCompleted: boolean;
     BIsAbsent: boolean;
-    AppointmentStages: CreateAppointmentStageDto[];
-    AppointmentStates: CreateAppointmentStateDto[];
 }

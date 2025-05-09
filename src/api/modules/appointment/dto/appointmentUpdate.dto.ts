@@ -7,10 +7,8 @@ export class UpdateAppointmentDto {
     ServiceId?: number;
     ProfessionalId?: number;
     DtDate?: Date;
-    TTime?: string;
+    TStartTime?: string;
     CurrentStateId?: number;
     BIsCompleted?: boolean;
     BIsAbsent?: boolean;
-    AppointmentStages?: UpdateAppointmentStageDto[];
-    AppointmentStates?: UpdateAppointmentStateDto[];
 }

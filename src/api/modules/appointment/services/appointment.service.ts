@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException, Inject } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, Repository, Between, LessThanOrEqual, MoreThanOrEqual, Not } from 'typeorm';
 import { AppointmentEntity } from '../entities/appointment.entity';
+import { AppointmentStageEntity } from '../entities/appointmentStage.entity';
 import { CreateAppointmentDto } from '../dto/appointmentCreate.dto';
 import { UpdateAppointmentDto } from '../dto/appointmentUpdate.dto';
 import { BaseCrudService } from '../../../shared/services/crud.services';
@@ -11,6 +12,12 @@ import { AppointmentStageService } from './appointmentStage.service';
 import { ClientEntity } from '../../client/entities/client.entity';
 import { ServiceEntity } from '../../service/entities/service.entity';
 import { ProfessionalEntity } from '../../professional/entities/professional.entity';
+import { ProfessionalServiceEntity } from '../../professional/entities/professionalService.entity';
+import { ProfessionalBussinessHourEntity } from '../../professional/entities/professionalBussinessHour.entity';
+import { ServiceStageEntity } from '../../service/entities/serviceStage.entity';
+import { CreateAppointmentStageDto } from '../dto/appointmentStageCreate.dto';
+import { CreateAppointmentStateDto } from '../dto/appointmentStateCreate.dto';
+import { log } from 'console';
 
 @Injectable()
 export class AppointmentService extends BaseCrudService<AppointmentEntity, CreateAppointmentDto, UpdateAppointmentDto> {
@@ -23,6 +30,12 @@ export class AppointmentService extends BaseCrudService<AppointmentEntity, Creat
     private readonly serviceRepository: Repository<ServiceEntity>,
     @InjectRepository(ProfessionalEntity)
     private readonly professionalRepository: Repository<ProfessionalEntity>,
+    @InjectRepository(ProfessionalServiceEntity)
+    private readonly professionalServiceRepository: Repository<ProfessionalServiceEntity>,
+    @InjectRepository(ProfessionalBussinessHourEntity)
+    private readonly professionalBussinessHourRepository: Repository<ProfessionalBussinessHourEntity>,
+    @InjectRepository(ServiceStageEntity)
+    private readonly serviceStageRepository: Repository<ServiceStageEntity>,
     @InjectDataSource()
     private readonly dataSource: DataSource,
     @Inject(AppointmentStateService)
@@ -48,18 +61,6 @@ export class AppointmentService extends BaseCrudService<AppointmentEntity, Creat
       });
     }
 
-    const serviceExists = await this.serviceRepository.findOne({
-      where: { Id: createAppointmentDto.ServiceId }
-    });
-    
-    if (!serviceExists) {
-      errors.push({
-        code: 'SERVICIO_NO_EXISTE',
-        message: `El servicio con ID ${createAppointmentDto.ServiceId} no existe`,
-        field: 'ServiceId'
-      });
-    }
-
     const professionalExists = await this.professionalRepository.findOne({
       where: { Id: createAppointmentDto.ProfessionalId }
     });
@@ -72,8 +73,134 @@ export class AppointmentService extends BaseCrudService<AppointmentEntity, Creat
       });
     }
 
+    const serviceExists = await this.serviceRepository.findOne({
+      where: { Id: createAppointmentDto.ServiceId }
+    });
+    
+    if (!serviceExists) {
+      errors.push({
+        code: 'SERVICIO_NO_EXISTE',
+        message: `El servicio con ID ${createAppointmentDto.ServiceId} no existe`,
+        field: 'ServiceId'
+      });
+    }
+
     if (errors.length > 0) {
-      throw new ConflictException(errors, 'Error en la validación de la cita');
+      throw new ConflictException(errors, 'Error en la validación de agendamiento');
+    }
+
+    const professionalServiceExists = await this.professionalServiceRepository.findOne({
+      where: { 
+        ProfessionalId: createAppointmentDto.ProfessionalId,
+        ServiceId: createAppointmentDto.ServiceId
+      }
+    });
+
+    if (!professionalServiceExists) {
+      errors.push({
+        code: 'PROFESIONAL_SERVICIO_NO_ASOCIADOS',
+        message: `El profesional con ID ${createAppointmentDto.ProfessionalId} no ofrece el servicio con ID ${createAppointmentDto.ServiceId}`,
+        field: 'ProfessionalId,ServiceId'
+      });
+    }
+
+    if (createAppointmentDto.DtDate && createAppointmentDto.TStartTime) {
+      const appointmentDate = new Date(createAppointmentDto.DtDate);
+      let dayOfWeek = appointmentDate.getDay(); 
+      
+      dayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek;
+      
+      const businessHour = await this.professionalBussinessHourRepository.findOne({
+        where: {
+          ProfessionalId: createAppointmentDto.ProfessionalId,
+          IDayOfWeek: dayOfWeek
+        }
+      });
+
+      if (!businessHour) {
+        errors.push({
+          code: 'PROFESIONAL_NO_TRABAJA_ESE_DIA',
+          message: `El profesional no trabaja el día seleccionado`,
+          field: 'DtDate'
+        });
+      } else {
+        const appointmentTime = createAppointmentDto.TStartTime;
+        
+        let startTime = '';
+        let endTime = '';
+        
+        if (businessHour.TStartTime) {
+          startTime = businessHour.TStartTime instanceof Date 
+            ? businessHour.TStartTime.toTimeString().substring(0, 5) 
+            : String(businessHour.TStartTime).substring(0, 5);
+        }
+        
+        if (businessHour.TEndTime) {
+          endTime = businessHour.TEndTime instanceof Date 
+            ? businessHour.TEndTime.toTimeString().substring(0, 5) 
+            : String(businessHour.TEndTime).substring(0, 5);
+        }
+
+        if (appointmentTime < startTime || appointmentTime > endTime) {
+          errors.push({
+            code: 'HORA_FUERA_HORARIO_LABORAL',
+            message: `La hora seleccionada está fuera del horario laboral del profesional (${startTime} - ${endTime})`,
+            field: 'TStartTime'
+          });
+        }
+
+        if (businessHour.TBreakStartTime && businessHour.TBreakEndTime) {
+          let breakStartTime = '';
+          let breakEndTime = '';
+          
+          if (businessHour.TBreakStartTime) {
+            breakStartTime = businessHour.TBreakStartTime instanceof Date 
+              ? businessHour.TBreakStartTime.toTimeString().substring(0, 5) 
+              : String(businessHour.TBreakStartTime).substring(0, 5);
+          }
+          
+          if (businessHour.TBreakEndTime) {
+            breakEndTime = businessHour.TBreakEndTime instanceof Date 
+              ? businessHour.TBreakEndTime.toTimeString().substring(0, 5) 
+              : String(businessHour.TBreakEndTime).substring(0, 5);
+          }
+
+          if (appointmentTime >= breakStartTime && appointmentTime <= breakEndTime) {
+            errors.push({
+              code: 'HORA_EN_DESCANSO',
+              message: `La hora seleccionada coincide con el período de descanso del profesional (${breakStartTime} - ${breakEndTime})`,
+              field: 'TStartTime'
+            });
+          }
+        }
+      }
+    }
+
+    if (createAppointmentDto.DtDate && createAppointmentDto.TStartTime && errors.length === 0) {
+      const date = new Date(createAppointmentDto.DtDate);
+      const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const endOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+
+      const existingAppointment = await this.appointmentRepository.findOne({
+        where: {
+          ProfessionalId: createAppointmentDto.ProfessionalId,
+          DtDate: Between(startOfDay, endOfDay),
+          TStartTime: createAppointmentDto.TStartTime,
+          CurrentStateId: Not(3)
+        }
+      });
+
+      if (existingAppointment) {
+        errors.push({
+          code: 'CITA_YA_EXISTE',
+          message: `El profesional ya tiene una cita programada en la hora seleccionada`,
+          field: 'TStartTime'
+        });
+      }
+    }
+
+    if (errors.length > 0) {
+      throw new ConflictException(errors, 'Error en la validación de agendamiento');
     }
   }
 
@@ -85,27 +212,86 @@ export class AppointmentService extends BaseCrudService<AppointmentEntity, Creat
     try {
       await this.validateCreate(createAppointmentDto);
       
-      const { AppointmentStages, AppointmentStates, ...appointmentData } = createAppointmentDto;
+      const appointmentData = {...createAppointmentDto};
+      
+      const serviceStages = await this.serviceStageRepository.find({
+        where: { ServiceId: createAppointmentDto.ServiceId },
+        order: { ISequence: 'ASC' }
+      });
+
+      if (!serviceStages || serviceStages.length === 0) {
+        throw new BadRequestException(
+          [{
+            code: 'ETAPAS_SERVICIO_NO_EXISTEN',
+            message: `El servicio con ID ${createAppointmentDto.ServiceId} no tiene etapas definidas`,
+            field: 'ServiceId'
+          }],
+          'El servicio no tiene etapas definidas'
+        );
+      }
+
+      const totalDurationMinutes = serviceStages.reduce((total, stage) => total + stage.IDurationMinutes, 0);
+      
+      const appointmentDate = new Date(createAppointmentDto.DtDate);
+      const [hours, minutes] = createAppointmentDto.TStartTime.split(':').map(Number);
+      appointmentDate.setHours(hours, minutes, 0, 0);
+      
+      const endDateTime = new Date(appointmentDate.getTime());
+      endDateTime.setMinutes(endDateTime.getMinutes() + totalDurationMinutes);
+      
+      const endHours = endDateTime.getHours().toString().padStart(2, '0');
+      const endMinutes = endDateTime.getMinutes().toString().padStart(2, '0');
+      const endTimeString = `${endHours}:${endMinutes}`;
+      
+      appointmentData['TEndTime'] = endTimeString;
+      
       const entity = this.appointmentRepository.create(appointmentData);
       const savedEntity = await queryRunner.manager.save(entity);
 
-      if (AppointmentStages && Array.isArray(AppointmentStages) && AppointmentStages.length > 0) {
+      const appointmentStages: CreateAppointmentStageDto[] = [];
+      let currentDateTime = new Date(appointmentDate.getTime());
+      
+      for (const serviceStage of serviceStages) {
+        const startDateTime = new Date(currentDateTime.getTime());
+        const endDateTime = new Date(startDateTime.getTime());
+        endDateTime.setMinutes(endDateTime.getMinutes() + serviceStage.IDurationMinutes);
+        
+        appointmentStages.push({
+          ServiceStageId: serviceStage.Id,
+          StartDateTime: startDateTime,
+          EndDateTime: endDateTime,
+          BlsProfessionalBusy: serviceStage.BIsProfessionalBussy
+        });
+        
+        currentDateTime = new Date(endDateTime.getTime());
+      }
+      
+      if (appointmentStages.length > 0) {
         const appointmentStageEntities = await this.appointmentStageService.createMany(
           queryRunner,
           savedEntity.Id,
-          AppointmentStages
+          appointmentStages
         );
         savedEntity.AppointmentStages = appointmentStageEntities;
       }
 
-      if (AppointmentStates && Array.isArray(AppointmentStates) && AppointmentStates.length > 0) {
-        const appointmentStateEntities = await this.appointmentStateService.createMany(
-          queryRunner,
-          savedEntity.Id,
-          AppointmentStates
-        );
-        savedEntity.AppointmentStates = appointmentStateEntities;
-      }
+      const appointmentState: CreateAppointmentStateDto = {
+        StateId: createAppointmentDto.CurrentStateId,
+        VcChangedBy: '1',
+        VcReason: 'Creación inicial de cita',
+        DtDateTime: new Date(),
+        DtPreviousDate: appointmentDate,
+        TPreviousTime: createAppointmentDto.TStartTime,
+        DtCurrentDate: appointmentDate,
+        TCurrentTime: createAppointmentDto.TStartTime
+      };
+      
+      const appointmentStateEntities = await this.appointmentStateService.createMany(
+        queryRunner,
+        savedEntity.Id,
+        [appointmentState]
+      );
+      savedEntity.AppointmentStates = appointmentStateEntities;
 
       await queryRunner.commitTransaction();
       return savedEntity;
@@ -205,6 +391,128 @@ export class AppointmentService extends BaseCrudService<AppointmentEntity, Creat
     if (errors.length > 0) {
       throw new ConflictException(errors, 'Error en la validación de la cita');
     }
+
+    const professionalId = updateAppointmentDto.ProfessionalId || appointment.ProfessionalId;
+    const serviceId = updateAppointmentDto.ServiceId || appointment.ServiceId;
+
+    if (updateAppointmentDto.ProfessionalId || updateAppointmentDto.ServiceId) {
+      const professionalServiceExists = await this.professionalServiceRepository.findOne({
+        where: { 
+          ProfessionalId: professionalId,
+          ServiceId: serviceId
+        }
+      });
+
+      if (!professionalServiceExists) {
+        errors.push({
+          code: 'PROFESIONAL_SERVICIO_NO_ASOCIADOS',
+          message: `El profesional con ID ${professionalId} no ofrece el servicio con ID ${serviceId}`,
+          field: 'ProfessionalId,ServiceId'
+        });
+      }
+    }
+
+    if (updateAppointmentDto.DtDate || updateAppointmentDto.TStartTime) {
+      const appointmentDate = updateAppointmentDto.DtDate 
+        ? new Date(updateAppointmentDto.DtDate) 
+        : appointment.DtDate;
+      
+      let dayOfWeek = appointmentDate.getDay(); 
+      const appointmentTime = updateAppointmentDto.TStartTime || appointment.TStartTime;
+      
+      dayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek;
+      
+      const businessHour = await this.professionalBussinessHourRepository.findOne({
+        where: {
+          ProfessionalId: professionalId,
+          IDayOfWeek: dayOfWeek
+        }
+      });
+
+      if (!businessHour) {
+        errors.push({
+          code: 'PROFESIONAL_NO_TRABAJA_ESE_DIA',
+          message: `El profesional no trabaja el día seleccionado`,
+          field: 'DtDate'
+        });
+      } else {
+        let startTime = '';
+        let endTime = '';
+        
+        if (businessHour.TStartTime) {
+          startTime = businessHour.TStartTime instanceof Date 
+            ? businessHour.TStartTime.toTimeString().substring(0, 5) 
+            : String(businessHour.TStartTime).substring(0, 5);
+        }
+        
+        if (businessHour.TEndTime) {
+          endTime = businessHour.TEndTime instanceof Date 
+            ? businessHour.TEndTime.toTimeString().substring(0, 5) 
+            : String(businessHour.TEndTime).substring(0, 5);
+        }
+
+        if (appointmentTime < startTime || appointmentTime > endTime) {
+          errors.push({
+            code: 'HORA_FUERA_HORARIO_LABORAL',
+            message: `La hora seleccionada está fuera del horario laboral del profesional (${startTime} - ${endTime})`,
+            field: 'TStartTime'
+          });
+        }
+
+        if (businessHour.TBreakStartTime && businessHour.TBreakEndTime) {
+          let breakStartTime = '';
+          let breakEndTime = '';
+          
+          if (businessHour.TBreakStartTime) {
+            breakStartTime = businessHour.TBreakStartTime instanceof Date 
+              ? businessHour.TBreakStartTime.toTimeString().substring(0, 5) 
+              : String(businessHour.TBreakStartTime).substring(0, 5);
+          }
+          
+          if (businessHour.TBreakEndTime) {
+            breakEndTime = businessHour.TBreakEndTime instanceof Date 
+              ? businessHour.TBreakEndTime.toTimeString().substring(0, 5) 
+              : String(businessHour.TBreakEndTime).substring(0, 5);
+          }
+
+          if (appointmentTime >= breakStartTime && appointmentTime <= breakEndTime) {
+            errors.push({
+              code: 'HORA_EN_DESCANSO',
+              message: `La hora seleccionada coincide con el período de descanso del profesional (${breakStartTime} - ${breakEndTime})`,
+              field: 'TStartTime'
+            });
+          }
+        }
+      }
+
+      if (errors.length === 0) {
+        const date = appointmentDate;
+        const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const endOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+
+        const existingAppointment = await this.appointmentRepository.findOne({
+          where: {
+            Id: Not(id),
+            ProfessionalId: professionalId,
+            DtDate: Between(startOfDay, endOfDay),
+            TStartTime: appointmentTime,
+            CurrentStateId: Not(3)
+          }
+        });
+
+        if (existingAppointment) {
+          errors.push({
+            code: 'CITA_YA_EXISTE',
+            message: `El profesional ya tiene una cita programada en la hora seleccionada`,
+            field: 'TStartTime'
+          });
+        }
+      }
+    }
+
+    if (errors.length > 0) {
+      throw new ConflictException(errors, 'Error en la validación de la cita');
+    }
   }
 
   async update(id: number, updateAppointmentDto: UpdateAppointmentDto): Promise<AppointmentEntity> {
@@ -213,16 +521,12 @@ export class AppointmentService extends BaseCrudService<AppointmentEntity, Creat
     await queryRunner.startTransaction();
 
     try {
-      await this.validateUpdate(id, updateAppointmentDto);
-      
-      const { AppointmentStages, AppointmentStates, ...appointmentData } = updateAppointmentDto;
-      
-      const existingEntity = await this.appointmentRepository.findOne({
+      const existingAppointment = await this.appointmentRepository.findOne({
         where: { Id: id },
         relations: ['AppointmentStages', 'AppointmentStates']
       });
 
-      if (!existingEntity) {
+      if (!existingAppointment) {
         throw new NotFoundException([
           {
             code: 'CITA_NO_EXISTE',
@@ -232,33 +536,120 @@ export class AppointmentService extends BaseCrudService<AppointmentEntity, Creat
         ], `La cita con ID ${id} no existe`);
       }
 
-      Object.assign(existingEntity, appointmentData);
+      const isCancelling = updateAppointmentDto.CurrentStateId === 3;
       
-      const updatedEntity = await queryRunner.manager.save(existingEntity);
-
-      if (AppointmentStages && Array.isArray(AppointmentStages) && AppointmentStages.length > 0) {
-        const appointmentStageEntities = await this.appointmentStageService.updateMany(
-          queryRunner,
-          updatedEntity.Id,
-          AppointmentStages
-        );
-        updatedEntity.AppointmentStages = appointmentStageEntities;
+      if (!isCancelling) {
+        await this.validateUpdate(id, updateAppointmentDto);
       }
-
-      if (AppointmentStates && Array.isArray(AppointmentStates) && AppointmentStates.length > 0) {
-        const newState = AppointmentStates[0];
+      
+      if (!updateAppointmentDto.CurrentStateId || updateAppointmentDto.CurrentStateId === existingAppointment.CurrentStateId) {
+        const appointmentData = {...updateAppointmentDto};
         
-        const appointmentStateEntities = await this.appointmentStateService.addAppointmentState(
-          queryRunner,
-          updatedEntity.Id,
-          newState
-        );
-        updatedEntity.AppointmentStates = appointmentStateEntities;
+        Object.assign(existingAppointment, appointmentData);
+        const updatedEntity = await queryRunner.manager.save(existingAppointment);
+        await queryRunner.commitTransaction();
+        return updatedEntity;
       }
 
-      await queryRunner.commitTransaction();
-      return updatedEntity;
+      const currentState = existingAppointment.CurrentStateId;
+      const newState = updateAppointmentDto.CurrentStateId;
+      
+      const appointmentState = {
+        StateId: newState,
+        VcChangedBy: '1', 
+        VcReason: this.getStateChangeReason(currentState, newState),
+        DtDateTime: new Date(),
+        DtPreviousDate: existingAppointment.DtDate,
+        TPreviousTime: existingAppointment.TStartTime,
+        DtCurrentDate: updateAppointmentDto.DtDate || existingAppointment.DtDate,
+        TCurrentTime: updateAppointmentDto.TStartTime || existingAppointment.TStartTime,
+        AppointmentId: existingAppointment.Id
+      };
 
+      const appointmentStateEntities = await this.appointmentStateService.createMany(
+        queryRunner,
+        existingAppointment.Id,
+        [appointmentState]
+      );
+      
+      existingAppointment.AppointmentStates = [
+        ...(existingAppointment.AppointmentStates || []),
+        ...appointmentStateEntities
+      ];
+      
+      existingAppointment.CurrentStateId = newState;
+
+      if (newState === 4 && (updateAppointmentDto.DtDate || updateAppointmentDto.TStartTime)) {
+        if (updateAppointmentDto.DtDate) {
+          existingAppointment.DtDate = updateAppointmentDto.DtDate;
+        }
+        
+        if (updateAppointmentDto.TStartTime) {
+          existingAppointment.TStartTime = updateAppointmentDto.TStartTime;
+        }
+        
+        const serviceStages = await this.serviceStageRepository.find({
+          where: { ServiceId: existingAppointment.ServiceId },
+          order: { ISequence: 'ASC' }
+        });
+
+        if (serviceStages && serviceStages.length > 0) {
+          const totalDurationMinutes = serviceStages.reduce((total, stage) => total + stage.IDurationMinutes, 0);
+          
+          const appointmentDate = new Date(existingAppointment.DtDate);
+          const [hours, minutes] = existingAppointment.TStartTime.split(':').map(Number);
+          appointmentDate.setHours(hours, minutes, 0, 0);
+          
+          const endDateTime = new Date(appointmentDate.getTime());
+          endDateTime.setMinutes(endDateTime.getMinutes() + totalDurationMinutes);
+          
+          const endHours = endDateTime.getHours().toString().padStart(2, '0');
+          const endMinutes = endDateTime.getMinutes().toString().padStart(2, '0');
+          const endTimeString = `${endHours}:${endMinutes}`;
+          
+          existingAppointment.TEndTime = endTimeString;
+          
+          const updatedAppointment = await queryRunner.manager.save(existingAppointment);
+          
+          if (existingAppointment.AppointmentStages && existingAppointment.AppointmentStages.length > 0) {
+            await queryRunner.manager.delete(AppointmentStageEntity, { AppointmentId: updatedAppointment.Id });
+          }
+          
+          const appointmentStages: CreateAppointmentStageDto[] = [];
+          let currentDateTime = new Date(appointmentDate.getTime());
+          
+          for (const serviceStage of serviceStages) {
+            const startDateTime = new Date(currentDateTime.getTime());
+            const endDateTime = new Date(startDateTime.getTime());
+            endDateTime.setMinutes(endDateTime.getMinutes() + serviceStage.IDurationMinutes);
+            
+            appointmentStages.push({
+              ServiceStageId: serviceStage.Id,
+              StartDateTime: startDateTime,
+              EndDateTime: endDateTime,
+              BlsProfessionalBusy: serviceStage.BIsProfessionalBussy
+            });
+            
+            currentDateTime = new Date(endDateTime.getTime());
+          }
+          
+          if (appointmentStages.length > 0) {
+            const newStages = await this.appointmentStageService.createMany(
+              queryRunner,
+              updatedAppointment.Id,
+              appointmentStages
+            );
+            
+            updatedAppointment.AppointmentStages = newStages;
+          }
+          
+          Object.assign(existingAppointment, updatedAppointment);
+        }
+      }
+      
+      const result = await queryRunner.manager.save(existingAppointment);
+      await queryRunner.commitTransaction();
+      return result;
     } catch (error) {
       await queryRunner.rollbackTransaction();
 
@@ -289,6 +680,25 @@ export class AppointmentService extends BaseCrudService<AppointmentEntity, Creat
       );
     } finally {
       await queryRunner.release();
+    }
+  }
+
+  private getStateChangeReason(currentState: number, newState: number): string {
+    switch (newState) {
+      case 2:
+        return 'Cita confirmada';
+      case 3:
+        return 'Cita cancelada';
+      case 4:
+        return 'Cita reagendada';
+      default:
+        const stateNames = {
+          1: 'Creada',
+          2: 'Confirmada',
+          3: 'Cancelada',
+          4: 'Reagendada'
+        };
+        return `Cambio de estado: ${stateNames[currentState] || 'Desconocido'} a ${stateNames[newState] || 'Desconocido'}`;
     }
   }
 

@@ -5,7 +5,7 @@ import bootstrapBot from './bot/main';
 async function main() {
   try {
     // Iniciar el bot
-    await bootstrapBot();
+    // await bootstrapBot();
 
     // Iniciar el API
     await bootstrapApi();

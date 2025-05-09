@@ -35,8 +35,11 @@ export class AppointmentEntity {
     @Column({ name: 'dt_date', type: 'timestamp' })
     DtDate: Date;
 
-    @Column({ name: 't_time', type: 'time' })
-    TTime: string;
+    @Column({ name: 't_start_time', type: 'time', nullable: true })
+    TStartTime: string;
+
+    @Column({ name: 't_end_time', type: 'time', nullable: true })
+    TEndTime: string;
 
     @Column({ name: 'current_state_id', type: 'integer' })
     CurrentStateId: number;

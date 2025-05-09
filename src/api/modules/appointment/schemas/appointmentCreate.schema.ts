@@ -8,10 +8,8 @@ export const createAppointmentSchema = Joi.object({
     ServiceId: Joi.number().integer().positive().required(),
     ProfessionalId: Joi.number().integer().positive().required(),
     DtDate: Joi.date().required(),
-    TTime: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).required(),
+    TStartTime: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).required(),
     CurrentStateId: Joi.number().integer().positive().required(),
     BIsCompleted: Joi.boolean().required(),
-    BIsAbsent: Joi.boolean().required(),
-    AppointmentStages: Joi.array().items(createAppointmentStageSchema).optional(),
-    AppointmentStates: Joi.array().items(createAppointmentStateSchema).optional()
+    BIsAbsent: Joi.boolean().required()
 }).messages(joiMessagesES);

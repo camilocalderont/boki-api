@@ -8,6 +8,7 @@ import { ProfessionalEntity } from './entities/professional.entity';
 import { ProfessionalBussinessHourEntity } from './entities/professionalBussinessHour.entity';
 import { ProfessionalServiceEntity } from './entities/professionalService.entity';
 import { CompanyBranchRoomEntity } from '../companyBranch/entities/companyBranchRoom.entity';
+import { ProfessionalRepository } from './repositories/professional.repository';
 
 @Module({
   imports: [
@@ -22,7 +23,8 @@ import { CompanyBranchRoomEntity } from '../companyBranch/entities/companyBranch
   providers: [
     ProfessionalService,
     ProfessionalBussinessHourService,
-    ProfessionalServiceService
+    ProfessionalServiceService,
+    ProfessionalRepository
   ],
   exports: [ProfessionalService],
 })

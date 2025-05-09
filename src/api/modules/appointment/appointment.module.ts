@@ -12,6 +12,9 @@ import { AppointmentController } from './controllers/appointment.controller';
 import { ClientEntity } from '../client/entities/client.entity';
 import { ServiceEntity } from '../service/entities/service.entity';
 import { ProfessionalEntity } from '../professional/entities/professional.entity';
+import { ProfessionalServiceEntity } from '../professional/entities/professionalService.entity';
+import { ProfessionalBussinessHourEntity } from '../professional/entities/professionalBussinessHour.entity';
+import { ServiceStageEntity } from '../service/entities/serviceStage.entity';
 
 @Module({
   imports: [
@@ -22,7 +25,10 @@ import { ProfessionalEntity } from '../professional/entities/professional.entity
       StateEntity,
       ClientEntity,
       ServiceEntity,
-      ProfessionalEntity
+      ProfessionalEntity,
+      ProfessionalServiceEntity,
+      ProfessionalBussinessHourEntity,
+      ServiceStageEntity
     ])
   ],
   controllers: [AppointmentController],

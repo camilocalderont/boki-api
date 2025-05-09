@@ -11,13 +11,16 @@ export const statesSeed = async (dataSource: DataSource): Promise<void> => {
 
     const states = [
         {
-            VcName: 'Confirmar'
+            VcName: 'Creada'
         },
         {
-            VcName: 'Cancelar'
+            VcName: 'Confirmada'
         },
         {
-            VcName: 'Reagendar'
+            VcName: 'Cancelada'
+        },
+        {
+            VcName: 'Reagendada'
         }
     ];
     await stateRepository.insert(states);

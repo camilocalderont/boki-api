@@ -12,12 +12,14 @@ import { BaseCrudService } from '../../../shared/services/crud.services';
 import { ApiErrorItem } from '~/api/shared/interfaces/api-response.interface';
 import { ProfessionalBussinessHourService } from './professionalBussinessHour.service';
 import { ProfessionalServiceService } from './professionalService.service';
+import { ProfessionalRepository } from '../repositories/professional.repository';
+import { Between, Not } from 'typeorm';
 
 @Injectable()
 export class ProfessionalService extends BaseCrudService<ProfessionalEntity, CreateProfessionalDto, UpdateProfessionalDto> {
     constructor(
         @InjectRepository(ProfessionalEntity)
-        private readonly professionalRepository: Repository<ProfessionalEntity>,
+        private readonly professionalTypeOrmRepo: Repository<ProfessionalEntity>,
         @InjectRepository(ProfessionalBussinessHourEntity)
         private readonly professionalBussinessHourRepository: Repository<ProfessionalBussinessHourEntity>,
         @InjectRepository(ProfessionalServiceEntity)
@@ -27,14 +29,16 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
         @Inject(ProfessionalBussinessHourService)
         private readonly professionalBussinessHourService: ProfessionalBussinessHourService,
         @Inject(ProfessionalServiceService)
-        private readonly professionalServiceService: ProfessionalServiceService
+        private readonly professionalServiceService: ProfessionalServiceService,
+        @Inject(ProfessionalRepository)
+        private readonly professionalRepository: ProfessionalRepository
     ) {
-        super(professionalRepository);
+        super(professionalTypeOrmRepo);
     }
 
     protected async validateCreate(createProfessionalDto: CreateProfessionalDto): Promise<void> {
         const errors: ApiErrorItem[] = [];
-        const existingEmail = await this.professionalRepository.findOne({
+        const existingEmail = await this.professionalTypeOrmRepo.findOne({
             where: { VcEmail: createProfessionalDto.VcEmail }
         });
 
@@ -46,7 +50,7 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
             });
         }
 
-        const existingId = await this.professionalRepository.findOne({
+        const existingId = await this.professionalTypeOrmRepo.findOne({
             where: { VcIdentificationNumber: createProfessionalDto.VcIdentificationNumber }
         });
 
@@ -58,7 +62,7 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
             });
         }
 
-        const existingPhone = await this.professionalRepository.findOne({
+        const existingPhone = await this.professionalTypeOrmRepo.findOne({
             where: { VcPhone: createProfessionalDto.VcPhone }
         });
 
@@ -70,7 +74,7 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
             });
         }
 
-        const existingLicense = await this.professionalRepository.findOne({
+        const existingLicense = await this.professionalTypeOrmRepo.findOne({
             where: { VcLicenseNumber: createProfessionalDto.VcLicenseNumber }
         });
 
@@ -95,7 +99,7 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
         try {
             await this.validateCreate(createProfessionalDto);
             const { BussinessHours, Services, ...professionalData } = createProfessionalDto;
-            const entity = this.professionalRepository.create(professionalData);
+            const entity = this.professionalTypeOrmRepo.create(professionalData);
             const savedEntity = await queryRunner.manager.save(entity);
 
             if (BussinessHours && Array.isArray(BussinessHours) && BussinessHours.length > 0) {
@@ -172,7 +176,7 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
         }
 
         if (updateProfessionalDto.VcEmail && updateProfessionalDto.VcEmail !== professional.VcEmail) {
-            const existingEmail = await this.professionalRepository.findOne({
+            const existingEmail = await this.professionalTypeOrmRepo.findOne({
                 where: { VcEmail: updateProfessionalDto.VcEmail }
             });
 
@@ -187,7 +191,7 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
 
         if (updateProfessionalDto.VcIdentificationNumber &&
             updateProfessionalDto.VcIdentificationNumber !== professional.VcIdentificationNumber) {
-            const existingId = await this.professionalRepository.findOne({
+            const existingId = await this.professionalTypeOrmRepo.findOne({
                 where: { VcIdentificationNumber: updateProfessionalDto.VcIdentificationNumber }
             });
 
@@ -322,7 +326,7 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
 
     async findBySpecialization(specialization: string): Promise<ProfessionalEntity[]> {
         try {
-            const professionals = await this.professionalRepository.find({
+            const professionals = await this.professionalTypeOrmRepo.find({
                 where: { VcSpecialization: specialization }
             });
 
@@ -355,7 +359,7 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
 
     async findByExperienceYears(years: number): Promise<ProfessionalEntity[]> {
         try {
-            const professionals = await this.professionalRepository.find({
+            const professionals = await this.professionalTypeOrmRepo.find({
                 where: { IYearsOfExperience: years }
             });
 
@@ -384,5 +388,301 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
                 'Ha ocurrido un error al buscar profesionales'
             );
         }
+    }
+
+    async findByServiceId(serviceId: number): Promise<ProfessionalEntity[]> {
+        try {
+            const professionals = await this.professionalRepository.findByServiceId(serviceId);
+
+            if (!professionals || professionals.length === 0) {
+                throw new NotFoundException([
+                    {
+                        code: 'PROFESIONALES_NO_ENCONTRADOS',
+                        message: `No se encontraron profesionales que ofrezcan el servicio con ID: ${serviceId}`,
+                        field: 'ServiceId'
+                    }
+                ], `No se encontraron profesionales que ofrezcan el servicio con ID: ${serviceId}`);
+            }
+
+            return professionals;
+        } catch (error) {
+            if (error instanceof NotFoundException) {
+                throw error;
+            }
+
+            throw new BadRequestException(
+                [{
+                    code: 'ERROR_BUSQUEDA_PROFESIONALES',
+                    message: `Ha ocurrido un error al buscar profesionales por servicio: ${error.message || 'Error desconocido'}`,
+                    field: 'professional'
+                }],
+                'Ha ocurrido un error al buscar profesionales por servicio'
+            );
+        }
+    }
+
+    async findGeneralAvailability(professionalId: number): Promise<any[]> {
+        try {
+            const professional = await this.findOne(professionalId);
+            
+            if (!professional) {
+                throw new NotFoundException([
+                    {
+                        code: 'PROFESIONAL_NO_ENCONTRADO',
+                        message: `No se encontró el profesional con ID: ${professionalId}`,
+                        field: 'Id'
+                    }
+                ], `No se encontró el profesional con ID: ${professionalId}`);
+            }
+            
+            const availability = await this.professionalRepository.findGeneralAvailability(professionalId);
+            
+            if (!availability || availability.length === 0) {
+                throw new NotFoundException([
+                    {
+                        code: 'HORARIOS_NO_ENCONTRADOS',
+                        message: `No se encontraron horarios disponibles para el profesional con ID: ${professionalId}`,
+                        field: 'ProfessionalId'
+                    }
+                ], `No se encontraron horarios disponibles para el profesional con ID: ${professionalId}`);
+            }
+            
+            return availability;
+        } catch (error) {
+            if (error instanceof NotFoundException) {
+                throw error;
+            }
+            
+            throw new BadRequestException(
+                [{
+                    code: 'ERROR_BUSQUEDA_DISPONIBILIDAD',
+                    message: `Ha ocurrido un error al buscar la disponibilidad del profesional: ${error.message || 'Error desconocido'}`,
+                    field: 'professional'
+                }],
+                'Ha ocurrido un error al buscar la disponibilidad del profesional'
+            );
+        }
+    }
+
+    async findAvailableSlots(professionalId: number, serviceId: number, date: Date): Promise<any> {
+        try {
+            const professional = await this.findOne(professionalId);
+            
+            if (!professional) {
+                throw new NotFoundException([
+                    {
+                        code: 'PROFESIONAL_NO_ENCONTRADO',
+                        message: `No se encontró el profesional con ID: ${professionalId}`,
+                        field: 'Id'
+                    }
+                ], `No se encontró el profesional con ID: ${professionalId}`);
+            }
+            
+            const professionalService = await this.professionalServiceRepository.findOne({
+                where: {
+                    ProfessionalId: professionalId,
+                    ServiceId: serviceId
+                }
+            });
+            
+            if (!professionalService) {
+                throw new NotFoundException([
+                    {
+                        code: 'SERVICIO_NO_DISPONIBLE',
+                        message: `El profesional con ID ${professionalId} no ofrece el servicio con ID ${serviceId}`,
+                        field: 'ServiceId'
+                    }
+                ], `El profesional no ofrece el servicio solicitado`);
+            }
+            
+            const requestedDate = new Date(date);
+            let dayOfWeek = requestedDate.getDay();
+            dayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek;
+            
+            const businessHour = await this.professionalBussinessHourRepository.findOne({
+                where: {
+                    ProfessionalId: professionalId,
+                    IDayOfWeek: dayOfWeek
+                }
+            });
+            
+            if (!businessHour) {
+                return {
+                    mañana: [],
+                    tarde: [],
+                    noche: [],
+                    mensaje: "El profesional no trabaja en este día"
+                };
+            }
+            
+            const startTimeStr = businessHour.TStartTime instanceof Date 
+                ? businessHour.TStartTime.toTimeString().substring(0, 5) 
+                : String(businessHour.TStartTime).substring(0, 5);
+                
+            const endTimeStr = businessHour.TEndTime instanceof Date 
+                ? businessHour.TEndTime.toTimeString().substring(0, 5) 
+                : String(businessHour.TEndTime).substring(0, 5);
+            
+            const [startHour, startMinute] = startTimeStr.split(':').map(Number);
+            const [endHour, endMinute] = endTimeStr.split(':').map(Number);
+            
+            const startDate = new Date(requestedDate);
+            startDate.setHours(startHour, startMinute, 0, 0);
+            
+            const endDate = new Date(requestedDate);
+            endDate.setHours(endHour, endMinute, 0, 0);
+            
+            let breakStartDate = null;
+            let breakEndDate = null;
+            
+            if (businessHour.TBreakStartTime && businessHour.TBreakEndTime) {
+                const breakStartStr = businessHour.TBreakStartTime instanceof Date 
+                    ? businessHour.TBreakStartTime.toTimeString().substring(0, 5) 
+                    : String(businessHour.TBreakStartTime).substring(0, 5);
+                    
+                const breakEndStr = businessHour.TBreakEndTime instanceof Date 
+                    ? businessHour.TBreakEndTime.toTimeString().substring(0, 5) 
+                    : String(businessHour.TBreakEndTime).substring(0, 5);
+                
+                const [breakStartHour, breakStartMinute] = breakStartStr.split(':').map(Number);
+                const [breakEndHour, breakEndMinute] = breakEndStr.split(':').map(Number);
+                
+                breakStartDate = new Date(requestedDate);
+                breakStartDate.setHours(breakStartHour, breakStartMinute, 0, 0);
+                
+                breakEndDate = new Date(requestedDate);
+                breakEndDate.setHours(breakEndHour, breakEndMinute, 0, 0);
+            }
+            
+            const serviceEntity = await this.dataSource.getRepository('Service').findOne({
+                where: { Id: serviceId },
+                relations: ['ServiceStages']
+            });
+            
+            if (!serviceEntity || !serviceEntity.ServiceStages) {
+                throw new NotFoundException([
+                    {
+                        code: 'SERVICIO_NO_ENCONTRADO',
+                        message: `No se encontró el servicio con ID: ${serviceId} o no tiene etapas definidas`,
+                        field: 'ServiceId'
+                    }
+                ], `No se encontró el servicio`);
+            }
+            
+            const totalServiceDuration = serviceEntity.ServiceStages.reduce(
+                (total, stage) => total + stage.IDurationMinutes, 0
+            );
+            
+            const startOfDay = new Date(requestedDate);
+            startOfDay.setHours(0, 0, 0, 0);
+            
+            const endOfDay = new Date(requestedDate);
+            endOfDay.setHours(23, 59, 59, 999);
+            
+            const existingAppointments = await this.dataSource.getRepository('Appointment').find({
+                where: {
+                    ProfessionalId: professionalId,
+                    DtDate: Between(startOfDay, endOfDay),
+                    CurrentStateId: Not(3)
+                },
+                order: { TStartTime: 'ASC' }
+            });
+            
+            const availableTimeSlots = [];
+            const slotDuration = 10;
+            
+            let currentTime = new Date(startDate);
+            
+            while (currentTime < endDate) {
+                const slotStartTime = new Date(currentTime);
+                const slotEndTime = new Date(currentTime);
+                slotEndTime.setMinutes(slotEndTime.getMinutes() + slotDuration);
+                
+                const serviceEndTime = new Date(slotStartTime);
+                serviceEndTime.setMinutes(serviceEndTime.getMinutes() + totalServiceDuration);
+                
+                let isInBreakTime = false;
+                if (breakStartDate && breakEndDate) {
+                    isInBreakTime = slotStartTime >= breakStartDate && slotStartTime < breakEndDate;
+                }
+                
+                let overlapsWithAppointment = false;
+                for (const appointment of existingAppointments) {
+                    const appointmentStartTime = new Date(requestedDate);
+                    const [appHour, appMinute] = appointment.TStartTime.split(':').map(Number);
+                    appointmentStartTime.setHours(appHour, appMinute, 0, 0);
+                    
+                    const appointmentEndTime = new Date(requestedDate);
+                    const [appEndHour, appEndMinute] = appointment.TEndTime.split(':').map(Number);
+                    appointmentEndTime.setHours(appEndHour, appEndMinute, 0, 0);
+                    
+                    if (
+                        (slotStartTime >= appointmentStartTime && slotStartTime < appointmentEndTime) ||
+                        (serviceEndTime > appointmentStartTime && serviceEndTime <= appointmentEndTime) ||
+                        (slotStartTime <= appointmentStartTime && serviceEndTime >= appointmentEndTime)
+                    ) {
+                        overlapsWithAppointment = true;
+                        break;
+                    }
+                }
+                
+                if (
+                    serviceEndTime <= endDate && 
+                    !isInBreakTime && 
+                    !overlapsWithAppointment
+                ) {
+                    const timeSlot = {
+                        time: this.formatTime(slotStartTime),
+                        startTime: slotStartTime,
+                        hour: slotStartTime.getHours()
+                    };
+                    availableTimeSlots.push(timeSlot);
+                }
+                
+                currentTime.setMinutes(currentTime.getMinutes() + slotDuration);
+            }
+            
+            const morningSlots = availableTimeSlots
+                .filter(slot => slot.hour >= 6 && slot.hour < 12)
+                .map(slot => slot.time);
+            
+            const afternoonSlots = availableTimeSlots
+                .filter(slot => slot.hour >= 12 && slot.hour < 18)
+                .map(slot => slot.time);
+            
+            const eveningSlots = availableTimeSlots
+                .filter(slot => (slot.hour >= 18 && slot.hour <= 23) || (slot.hour >= 0 && slot.hour < 6))
+                .map(slot => slot.time);
+            
+            return {
+                mañana: morningSlots,
+                tarde: afternoonSlots,
+                noche: eveningSlots
+            };
+        } catch (error) {
+            if (error instanceof NotFoundException) {
+                throw error;
+            }
+            
+            throw new BadRequestException(
+                [{
+                    code: 'ERROR_BUSQUEDA_SLOTS',
+                    message: `Ha ocurrido un error al buscar los espacios disponibles: ${error.message || 'Error desconocido'}`,
+                    field: 'professional'
+                }],
+                'Ha ocurrido un error al buscar los espacios disponibles'
+            );
+        }
+    }
+    
+    private formatTime(date: Date): string {
+        let hours = date.getHours();
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        
+        hours = hours % 12;
+        hours = hours ? hours : 12;
+        
+        return `${hours}:${minutes} ${ampm}`;
     }
 }
