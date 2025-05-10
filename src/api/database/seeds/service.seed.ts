@@ -26,12 +26,58 @@ export const serviceSeed = async (dataSource: DataSource): Promise<void> => {
             CategoryId: 1,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
+        },
+        {
+            Id: 2,
+            VcName: "Pedicura Spa",
+            VcDescription: "Tratamiento completo de pedicura con exfoliación, masaje e hidratación",
+            IMinimalPrice: 40000,
+            IMaximalPrice: 60000,
+            IRegularPrice: 50000,
+            DTaxes: 19,
+            VcTime: "01:45",
+            TxPicture: null,
+            CompanyId: 1,
+            CategoryId: 1,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        },
+        {
+            Id: 3,
+            VcName: "Corte y Peinado",
+            VcDescription: "Corte de cabello personalizado y peinado según el estilo deseado",
+            IMinimalPrice: 30000,
+            IMaximalPrice: 50000,
+            IRegularPrice: 40000,
+            DTaxes: 19,
+            VcTime: "01:00",
+            TxPicture: null,
+            CompanyId: 1,
+            CategoryId: 2,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        },
+        {
+            Id: 4,
+            VcName: "Tratamiento Capilar Intensivo",
+            VcDescription: "Tratamiento restaurador para cabello dañado con productos premium",
+            IMinimalPrice: 55000,
+            IMaximalPrice: 85000,
+            IRegularPrice: 70000,
+            DTaxes: 19,
+            VcTime: "01:15",
+            TxPicture: null,
+            CompanyId: 1,
+            CategoryId: 2,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
         }
     ];
 
     await serviceRepository.insert(services);
 
     const serviceStages = [
+        // Etapas para Servicio 1: Manicura Profesional
         {
             ServiceId: 1,
             ISequence: 1,
@@ -77,6 +123,152 @@ export const serviceSeed = async (dataSource: DataSource): Promise<void> => {
             ISequence: 5,
             IDurationMinutes: 10,
             VcDescription: "Secado y acabado final",
+            BIsProfessionalBussy: true,
+            BIsActive: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        },
+        
+        // Etapas para Servicio 2: Pedicura Spa
+        {
+            ServiceId: 2,
+            ISequence: 1,
+            IDurationMinutes: 15,
+            VcDescription: "Baño de pies y remoción de esmalte anterior",
+            BIsProfessionalBussy: true,
+            BIsActive: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        },
+        {
+            ServiceId: 2,
+            ISequence: 2,
+            IDurationMinutes: 20,
+            VcDescription: "Exfoliación y limpieza de cutículas",
+            BIsProfessionalBussy: true,
+            BIsActive: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        },
+        {
+            ServiceId: 2,
+            ISequence: 3,
+            IDurationMinutes: 25,
+            VcDescription: "Masaje relajante de pies",
+            BIsProfessionalBussy: true,
+            BIsActive: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        },
+        {
+            ServiceId: 2,
+            ISequence: 4,
+            IDurationMinutes: 30,
+            VcDescription: "Aplicación de esmalte",
+            BIsProfessionalBussy: true,
+            BIsActive: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        },
+        {
+            ServiceId: 2,
+            ISequence: 5,
+            IDurationMinutes: 15,
+            VcDescription: "Hidratación final",
+            BIsProfessionalBussy: true,
+            BIsActive: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        },
+        
+        // Etapas para Servicio 3: Corte y Peinado
+        {
+            ServiceId: 3,
+            ISequence: 1,
+            IDurationMinutes: 10,
+            VcDescription: "Consulta y diagnóstico de estilo",
+            BIsProfessionalBussy: true,
+            BIsActive: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        },
+        {
+            ServiceId: 3,
+            ISequence: 2,
+            IDurationMinutes: 10,
+            VcDescription: "Lavado de cabello",
+            BIsProfessionalBussy: true,
+            BIsActive: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        },
+        {
+            ServiceId: 3,
+            ISequence: 3,
+            IDurationMinutes: 25,
+            VcDescription: "Corte de cabello",
+            BIsProfessionalBussy: true,
+            BIsActive: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        },
+        {
+            ServiceId: 3,
+            ISequence: 4,
+            IDurationMinutes: 15,
+            VcDescription: "Peinado y acabado",
+            BIsProfessionalBussy: true,
+            BIsActive: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        },
+        
+        // Etapas para Servicio 4: Tratamiento Capilar Intensivo
+        {
+            ServiceId: 4,
+            ISequence: 1,
+            IDurationMinutes: 10,
+            VcDescription: "Análisis del cabello y diagnóstico",
+            BIsProfessionalBussy: true,
+            BIsActive: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        },
+        {
+            ServiceId: 4,
+            ISequence: 2,
+            IDurationMinutes: 15,
+            VcDescription: "Lavado especializado",
+            BIsProfessionalBussy: true,
+            BIsActive: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        },
+        {
+            ServiceId: 4,
+            ISequence: 3,
+            IDurationMinutes: 20,
+            VcDescription: "Aplicación del tratamiento regenerador",
+            BIsProfessionalBussy: true,
+            BIsActive: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        },
+        {
+            ServiceId: 4,
+            ISequence: 4,
+            IDurationMinutes: 20,
+            VcDescription: "Tiempo de exposición con calor",
+            BIsProfessionalBussy: false,
+            BIsActive: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        },
+        {
+            ServiceId: 4,
+            ISequence: 5,
+            IDurationMinutes: 10,
+            VcDescription: "Enjuague y aplicación de sellador",
             BIsProfessionalBussy: true,
             BIsActive: true,
             created_at: new Date().toISOString(),
