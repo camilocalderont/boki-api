@@ -421,7 +421,7 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
         }
     }
 
-    async findGeneralAvailability(professionalId: number): Promise<any[]> {
+    async findGeneralAvailability(professionalId: number, startDate?: Date): Promise<any[]> {
         try {
             const professional = await this.findOne(professionalId);
             
@@ -435,9 +435,9 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
                 ], `No se encontró el profesional con ID: ${professionalId}`);
             }
             
-            const availability = await this.professionalRepository.findGeneralAvailability(professionalId);
+            const allAvailability = await this.professionalRepository.findGeneralAvailability(professionalId);
             
-            if (!availability || availability.length === 0) {
+            if (!allAvailability || allAvailability.length === 0) {
                 throw new NotFoundException([
                     {
                         code: 'HORARIOS_NO_ENCONTRADOS',
@@ -447,7 +447,61 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
                 ], `No se encontraron horarios disponibles para el profesional con ID: ${professionalId}`);
             }
             
-            return availability;
+            const availabilityByDay = new Map();
+            for (const item of allAvailability) {
+                availabilityByDay.set(item.diaNumero, item);
+            }
+            
+            let baseDate;
+            
+            if (startDate) {
+                if (!(startDate instanceof Date) || isNaN(startDate.getTime())) {
+                    baseDate = new Date();
+                } else {
+                    baseDate = new Date(startDate.getTime());
+                }
+            } else {
+                baseDate = new Date();
+            }
+            
+            const dateString = baseDate.toISOString().split('T')[0]; 
+            const [year, month, day] = dateString.split('-').map(Number);
+            
+            baseDate = new Date(year, month - 1, day);
+            
+            const nextWorkingDays = [];
+            const diasDeSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+            
+            let exactDateDayOfWeek = baseDate.getDay();
+            exactDateDayOfWeek = exactDateDayOfWeek === 0 ? 7 : exactDateDayOfWeek;
+            
+            if (availabilityByDay.has(exactDateDayOfWeek)) {
+                const availability = { ...availabilityByDay.get(exactDateDayOfWeek) };
+                const formattedDate = this.formatDateToSpanish(baseDate);
+                availability.fecha = formattedDate;
+                availability.fechaCompleta = new Date(baseDate);
+                nextWorkingDays.push(availability);
+            }
+            
+            let currentDate = new Date(baseDate);
+            currentDate.setDate(currentDate.getDate() + 1);
+            
+            while (nextWorkingDays.length < 5) {
+                let dayOfWeek = currentDate.getDay();
+                dayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek;
+                
+                if (availabilityByDay.has(dayOfWeek)) {
+                    const availability = { ...availabilityByDay.get(dayOfWeek) };
+                    const formattedDate = this.formatDateToSpanish(currentDate);
+                    availability.fecha = formattedDate;
+                    availability.fechaCompleta = new Date(currentDate);
+                    
+                    nextWorkingDays.push(availability);
+                }
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            
+            return nextWorkingDays;
         } catch (error) {
             if (error instanceof NotFoundException) {
                 throw error;
@@ -462,6 +516,17 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
                 'Ha ocurrido un error al buscar la disponibilidad del profesional'
             );
         }
+    }
+    
+    private formatDateToSpanish(date: Date): string {
+        const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+        
+        const dayName = days[date.getDay()];
+        const day = date.getDate();
+        const month = months[date.getMonth()];
+        
+        return `${dayName} ${day} de ${month}`;
     }
 
     async findAvailableSlots(professionalId: number, serviceId: number, date: Date): Promise<any> {
@@ -588,8 +653,22 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
                 order: { TStartTime: 'ASC' }
             });
             
+            const company = await this.dataSource.getRepository('Company').findOne({
+                where: { Id: serviceEntity.CompanyId }
+            });
+            
+            if (!company) {
+                throw new NotFoundException([
+                    {
+                        code: 'COMPANIA_NO_ENCONTRADA',
+                        message: `No se encontró la compañía asociada al servicio con ID: ${serviceId}`,
+                        field: 'CompanyId'
+                    }
+                ], `No se encontró la compañía`);
+            }
+            
             const availableTimeSlots = [];
-            const slotDuration = 10;
+            const slotDuration = company.IFrequencyScheduling || 10; 
             
             let currentTime = new Date(startDate);
             

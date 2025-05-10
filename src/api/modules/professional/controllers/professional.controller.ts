@@ -196,12 +196,31 @@ export class ProfessionalController extends BaseCrudController<ProfessionalEntit
   }
 
   @Get(':professionalId/general-availability')
-  async getGeneralAvailability(@Param('professionalId', ParseIntPipe) professionalId: number): Promise<ApiControllerResponse<any[]>> {
+  async getGeneralAvailability(@Param('professionalId', ParseIntPipe) professionalId: number, @Query('startDate') startDate?: string): Promise<ApiControllerResponse<any[]>> {
     if (isNaN(professionalId) || professionalId <= 0) {
       throw new BadRequestException(`ID de profesional inválido: ${professionalId}. El ID debe ser un número positivo.`);
     }
     
-    const availability = await this.professionalService.findGeneralAvailability(professionalId);
+    let parsedDate;
+    
+    if (startDate) {
+      try {
+        if (startDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          const [year, month, day] = startDate.split('-').map(Number);
+          parsedDate = new Date(year, month - 1, day);
+        } else {
+          parsedDate = new Date(startDate);
+        }
+        
+        if (isNaN(parsedDate.getTime())) {
+          throw new BadRequestException(`La fecha proporcionada no es válida: ${startDate}`);
+        }
+      } catch (error) {
+        throw new BadRequestException(`Error al procesar la fecha: ${startDate}`);
+      }
+    }
+    
+    const availability = await this.professionalService.findGeneralAvailability(professionalId, parsedDate);
     return {
       message: `Disponibilidad general del profesional con ID: ${professionalId}`,
       data: availability

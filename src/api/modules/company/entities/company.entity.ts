@@ -25,6 +25,9 @@ export class CompanyEntity {
     @Column({ name: 'vc_legal_representative', type: 'varchar', length: 100, nullable: true })
     VcLegalRepresentative?: string;
 
+    @Column({ name: 'i_frequency_scheduling', type: 'int', default: 10 })
+    IFrequencyScheduling: number;
+
     @Column({ name: 'tx_logo', type: 'text', nullable: true })
     TxLogo?: string;
 
