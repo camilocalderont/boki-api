@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ClientEntity } from '../entities/client.entity';
 import { CreateClientDto } from '../dto/clientCreate.dto';
+import { ClientRepository } from '../repositories/client.repository';
 import { UpdateClientDto } from '../dto/clientUpdate.dto';
 import * as bcrypt from 'bcrypt';
 import { BaseCrudService } from '../../../shared/services/crud.services';
@@ -12,7 +13,9 @@ import { ApiErrorItem } from '~/api/shared/interfaces/api-response.interface';
 export class ClientService extends BaseCrudService<ClientEntity, CreateClientDto, UpdateClientDto> {
     constructor(
         @InjectRepository(ClientEntity)
-        private readonly clientRepository: Repository<ClientEntity>
+        private readonly clientRepository: Repository<ClientEntity>,
+        @Inject(ClientRepository)
+        private readonly clientCustomRepository: ClientRepository
     ) {
         super(clientRepository);
     }
@@ -31,7 +34,7 @@ export class ClientService extends BaseCrudService<ClientEntity, CreateClientDto
         if (existingClient) {
             errors.push({
                 code: 'EMAIL_ALREADY_EXISTS',
-                message: 'Ya existe un cliente con este email',
+                message: 'There is already a customer with this email.',
                 field: 'VcEmail'
             });
         }
@@ -39,99 +42,114 @@ export class ClientService extends BaseCrudService<ClientEntity, CreateClientDto
         if (existingClientByIdentification) {
             errors.push({
                 code: 'IDENTIFICATION_NUMBER_ALREADY_EXISTS',
-                message: 'Ya existe un cliente con este número de identificación',
+                message: 'There is already a customer with this identification number.',
                 field: 'VcIdentificationNumber'
             });
         }
 
         if (errors.length > 0) {
-            throw new ConflictException(errors, "Ya existe un cliente con estos datos");
+            throw new ConflictException(errors, "There is already a customer with these data");
         }
-
-    }
-
-    protected async prepareCreateData(createClientDto: CreateClientDto): Promise<Partial<ClientEntity>> {
-        const hashedPassword = await bcrypt.hash(createClientDto.VcPassword, 10);
-
-        return {
-            ...createClientDto,
-            VcPassword: hashedPassword
-        };
     }
 
     async create(createClientDto: CreateClientDto): Promise<ClientEntity> {
         try {
             await this.validateCreate(createClientDto);
 
-            const preparedData = await this.prepareCreateData(createClientDto);
-            const entity = this.clientRepository.create(preparedData as any);
+            const entity = this.clientRepository.create(createClientDto);
             const savedEntity = await this.clientRepository.save(entity as any);
 
             await this.afterCreate(savedEntity as ClientEntity);
 
             return savedEntity;
         } catch (error) {
-            if (error instanceof BadRequestException ||
-                error instanceof ConflictException) {
+            if (error instanceof BadRequestException || error instanceof ConflictException) {
                 throw error;
             }
 
             if (error.code === '23505') {
-                throw new ConflictException('Ya existe un cliente con estos datos');
+                throw new ConflictException(
+                    [{
+                        code: '23505',
+                        message: 'There is already a customer with these data',
+                        field: 'client'
+                    }],
+                    'There is already a customer with these data'
+                );
             }
 
-            console.error('Error in create:', error);
-            throw error;
+            throw new BadRequestException('An unexpected error occurred', error);
         }
     }
 
     protected async validateUpdate(id: number, updateClientDto: UpdateClientDto): Promise<void> {
-        try {
-            const client = await this.findOne(id);
+        const client = await this.findOne(id);
 
-            if (updateClientDto.VcEmail && updateClientDto.VcEmail !== client.VcEmail) {
-                const existingClient = await this.clientRepository.findOne({
-                    where: { VcEmail: updateClientDto.VcEmail }
+        if (updateClientDto.VcEmail && updateClientDto.VcEmail !== client.VcEmail) {
+            const existingClient = await this.clientRepository.findOne({
+                where: { VcEmail: updateClientDto.VcEmail }
+            });
+
+            const errors: ApiErrorItem[] = [];
+
+            if (existingClient) {
+                errors.push({
+                    code: 'EMAIL_ALREADY_EXISTS',
+                    message: 'There is already a customer with this email.',
+                    field: 'VcEmail'
                 });
-
-                if (existingClient) {
-                    throw new ConflictException('Ya existe un cliente con este email');
-                }
             }
-        } catch (error) {
-            if (error instanceof NotFoundException) {
-                throw error;
+
+            if (errors.length > 0) {
+                throw new ConflictException(errors, "There is already a customer with these data");
             }
-            throw new BadRequestException(`Error validating client with ID ${id}: ${error.message}`);
         }
-    }
-
-    protected async prepareUpdateData(entity: ClientEntity, updateClientDto: UpdateClientDto): Promise<Partial<ClientEntity>> {
-        const preparedData = { ...updateClientDto };
-
-        if (preparedData.VcPassword) {
-            preparedData.VcPassword = await bcrypt.hash(preparedData.VcPassword, 10);
-        }
-
-        return preparedData;
     }
 
     async update(id: number, updateClientDto: UpdateClientDto): Promise<ClientEntity> {
         try {
             return await super.update(id, updateClientDto);
         } catch (error) {
-            if (error instanceof BadRequestException ||
-                error instanceof ConflictException ||
-                error instanceof NotFoundException) {
+            if (error instanceof BadRequestException || error instanceof ConflictException) {
                 throw error;
             }
 
             if (error.code === '23505') {
-                throw new ConflictException('Ya existe un cliente con estos datos');
+                throw new ConflictException(
+                    [{
+                        code: '23505',
+                        message: 'There is already a customer with these data',
+                        field: 'client'
+                    }],
+                    'There is already a customer with these data'
+                );
             }
 
-            console.error('Error in update:', error);
-            throw error;
+            throw new BadRequestException('An unexpected error occurred', error);
+        }
+    }
+
+    async clientByCellphone(cellphone: string): Promise<ClientEntity> {
+        try {
+            const client = await this.clientCustomRepository.findByPhone(cellphone);
+
+            if (!client) {
+                throw new ConflictException(
+                    [{
+                        code: 'NUMBER_DOES_NOT_EXIST',
+                        message: `No customer found with the phone number ${cellphone}`,
+                        field: 'cellphone'
+                    }],
+                    'No customer found with the phone number'
+                );
+            }
+
+            return client;
+        } catch (error) {
+            if (error instanceof BadRequestException || error instanceof ConflictException) {
+                throw error;
+            }
+            throw new BadRequestException('Error searching for a client by phone');
         }
     }
 }

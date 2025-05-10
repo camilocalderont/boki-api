@@ -1,3 +1,5 @@
+import { UpdateCompanyBranchRoomDto } from './companyBranchRoomUpdate.dto';
+
 export class UpdateCompanyBranchDto {
   CompanyId?: number;
   VcName?: string;
@@ -8,4 +10,5 @@ export class UpdateCompanyBranchDto {
   VcBranchManagerName?: string;
   VcImage?: string;
   BIsPrincipal?: boolean;
+  CompanyBranchRooms?: UpdateCompanyBranchRoomDto[];
 }

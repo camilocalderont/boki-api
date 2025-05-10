@@ -1,3 +1,6 @@
+import { CreateProfessionalBussinessHourDto } from './professionalBussinessHourCreate.dto';
+import { CreateProfessionalServiceDto } from './professionalServiceCreate.dto';
+
 export class CreateProfessionalDto {
   VcFirstName: string;
   VcSecondName?: string;
@@ -8,7 +11,9 @@ export class CreateProfessionalDto {
   VcIdentificationNumber: string;
   VcLicenseNumber?: string;
   IYearsOfExperience?: number;
-  VcPhoto?: string;
+  TxPhoto?: string;
   VcProfession: string;
   VcSpecialization?: string;
+  BussinessHours?: CreateProfessionalBussinessHourDto[];
+  Services?: CreateProfessionalServiceDto[];
 }

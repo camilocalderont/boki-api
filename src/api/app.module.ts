@@ -11,7 +11,10 @@ import { ProfessionalModule } from './modules/professional/professional.module';
 import { CategoryServiceModule } from './modules/categoryService/categoryService.module';
 import { ServiceModule } from './modules/service/service.module';
 import { ApiTokenGuard } from './shared/utils/api-token.guard';
-
+import { UsersModule } from './modules/users/users.module';
+import { AppointmentModule } from './modules/appointment/appointment.module';
+import { TagsModule } from './modules/tags/tags.module';
+import { FaqsModule } from './modules/faqs/faqs.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -22,6 +25,10 @@ import { ApiTokenGuard } from './shared/utils/api-token.guard';
     CategoryServiceModule,
     ProfessionalModule,
     ServiceModule,
+    UsersModule,
+    AppointmentModule,
+    TagsModule,
+    FaqsModule
   ],
   controllers: [],
   providers: [

@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { ServiceEntity } from '../../service/entities/service.entity';
 
 @Entity('CategoryService')
 export class CategoryServiceEntity {
@@ -13,4 +14,10 @@ export class CategoryServiceEntity {
 
     @UpdateDateColumn({ name: 'updated_at' })
     updated_at: Date;
+
+    @Column({ name: 'b_is_service', type: 'boolean', default: false })
+    BIsService: boolean;
+
+    @OneToMany(() => ServiceEntity, service => service.Category)
+    Services: ServiceEntity[];
 }

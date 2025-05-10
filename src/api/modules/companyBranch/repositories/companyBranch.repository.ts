@@ -10,25 +10,7 @@ export class CompanyBranchRepository {
     @InjectRepository(CompanyBranchEntity)
     private readonly companyBranchRepository: Repository<CompanyBranchEntity>,
   ) {}
-
-  async create(createCompanyBranchDto: CreateCompanyBranchDto): Promise<CompanyBranchEntity> {
-    const companyBranch = this.companyBranchRepository.create(createCompanyBranchDto);
-    return await this.companyBranchRepository.save(companyBranch);
-  }
-
-  async findAll(): Promise<CompanyBranchEntity[]> {
-    return await this.companyBranchRepository.find({ 
-      relations: ['Company']
-    });
-  }
-
-  async findOne(id: number): Promise<CompanyBranchEntity> {
-    return await this.companyBranchRepository.findOne({ 
-      where: { Id: id },
-      relations: ['Company']
-    });
-  }
-
+  
   async findByCompany(companyId: number): Promise<CompanyBranchEntity[]> {
     return await this.companyBranchRepository.find({ 
       where: { CompanyId: companyId },
@@ -46,12 +28,4 @@ export class CompanyBranchRepository {
     });
   }
 
-  async update(id: number, updateCompanyBranchDto: Partial<CreateCompanyBranchDto>): Promise<CompanyBranchEntity> {
-    await this.companyBranchRepository.update(id, updateCompanyBranchDto);
-    return await this.findOne(id);
-  }
-
-  async delete(id: number): Promise<void> {
-    await this.companyBranchRepository.delete(id);
-  }
 }

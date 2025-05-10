@@ -12,6 +12,5 @@ export const createClientSchema = Joi.object({
   VcSecondName: Joi.string().min(2).max(50).allow('', null),
   VcFirstLastName: Joi.string().min(2).max(50).required(),
   VcSecondLastName: Joi.string().min(2).max(50).allow('', null),
-  VcEmail: Joi.string().email().required(),
-  VcPassword: Joi.string().min(8).required()
+  VcEmail: Joi.string().email().required()
 }).messages(joiMessagesES);

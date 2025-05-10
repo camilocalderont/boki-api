@@ -7,5 +7,4 @@ export class UpdateClientDto {
   VcFirstLastName: string;
   VcSecondLastName?: string;
   VcEmail?: string;
-  VcPassword?: string;
 }

@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { AppointmentEntity } from '../../appointment/entities/appointment.entity';
 
 @Entity('Client')
 export class ClientEntity {
@@ -29,12 +30,12 @@ export class ClientEntity {
     @Column({ name: 'vc_email', type: 'varchar', length: 100, unique: true })
     VcEmail: string;
 
-    @Column({ name: 'vc_password', type: 'varchar', length: 255 })
-    VcPassword: string;
-
     @CreateDateColumn({ name: 'created_at' })
     created_at: Date;
 
     @UpdateDateColumn({ name: 'updated_at' })
     updated_at: Date;
+
+    @OneToMany(() => AppointmentEntity, appointment => appointment.Client)
+    Appointments: AppointmentEntity[];
 }

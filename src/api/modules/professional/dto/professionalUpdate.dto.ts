@@ -1,3 +1,6 @@
+import { UpdateProfessionalBussinessHourDto } from "./professionalBussinessHourUpdate.dto";
+import { UpdateProfessionalServiceDto } from "./professionalServiceUpdate.dto";
+
 export class UpdateProfessionalDto {
   VcFirstName?: string;
   VcSecondName?: string;
@@ -8,7 +11,9 @@ export class UpdateProfessionalDto {
   VcIdentificationNumber?: string;
   VcLicenseNumber?: string;
   IYearsOfExperience?: number;
-  VcPhoto?: string;
+  TxPhoto?: string;
   VcProfession?: string;
   VcSpecialization?: string;
+  BussinessHours?: UpdateProfessionalBussinessHourDto[];
+  Services?: UpdateProfessionalServiceDto[];
 }

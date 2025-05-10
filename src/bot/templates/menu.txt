@@ -1,0 +1,13 @@
+✨ ¡Bienvenida a Golden Nails Spa! ✨
+
+Tu oasis para el cuidado de uñas, pestañas y cejas. ¿Cómo podemos ayudarte hoy?
+
+Elige una de las siguientes opciones escribiendo el número correspondiente:
+
+💅  1 - Ver nuestros Servicios (Manicure, Pedicure, Pestañas, Cejas y más)
+🗓️  2 - Reservar una Cita Online
+❓  3 - Preguntas Frecuentes (Horarios, Precios, Políticas, Cuidados)
+📞  4 - Contacto y Ubicación
+🚪  0 - Salir
+
+Escribe el número de tu opción:

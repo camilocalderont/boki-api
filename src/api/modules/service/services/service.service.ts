@@ -1,161 +1,265 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Injectable, NotFoundException, ConflictException, BadRequestException, Inject } from '@nestjs/common';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { ServiceEntity } from '../entities/service.entity';
+import { ServiceStageEntity } from '../entities/serviceStage.entity';
 import { CreateServiceDto } from '../dto/serviceCreate.dto';
 import { UpdateServiceDto } from '../dto/serviceUpdate.dto';
 import { BaseCrudService } from '../../../shared/services/crud.services';
+import { ApiErrorItem } from '~/api/shared/interfaces/api-response.interface';
+import { ServiceStageService } from './serviceStage.service';
 
 @Injectable()
 export class ServiceService extends BaseCrudService<ServiceEntity, CreateServiceDto, UpdateServiceDto> {
     constructor(
         @InjectRepository(ServiceEntity)
-        private readonly serviceRepository: Repository<ServiceEntity>
+        private readonly serviceRepository: Repository<ServiceEntity>,
+        @InjectDataSource()
+        private readonly dataSource: DataSource,
+        @Inject(ServiceStageService)
+        private readonly serviceStageService: ServiceStageService
     ) {
         super(serviceRepository);
     }
 
     protected async validateCreate(createServiceDto: CreateServiceDto): Promise<void> {
-        if (!createServiceDto.VcName) {
-            throw new BadRequestException('Service name is required');
-        }
-        
-        // Verify if minimal price is less than or equal to maximal price
-        if (createServiceDto.IMinimalPrice > createServiceDto.IMaximalPrice) {
-            throw new BadRequestException('Minimal price cannot be greater than maximal price');
+        const errors: ApiErrorItem[] = [];
+        const existingService = await this.serviceRepository.findOne({
+            where: { VcName: createServiceDto.VcName }
+        });
+
+        if (existingService) {
+            errors.push({
+                code: 'NOMBRE_YA_EXISTE',
+                message: 'Ya existe un servicio con este nombre.',
+                field: 'VcName'
+            });
         }
 
-        // Verify if regular price is within the range of minimal and maximal price
-        if (createServiceDto.IRegularPrice < createServiceDto.IMinimalPrice || createServiceDto.IRegularPrice > createServiceDto.IMaximalPrice) {
-            throw new BadRequestException('Regular price must be within the range of minimal and maximal price');
+        const existingCompany = await this.serviceRepository.findOne({
+            where: { CompanyId: createServiceDto.CompanyId }
+        });
+        if (!existingCompany) {
+            errors.push({
+                code: 'EMPRESA_NO_EXISTE',
+                message: 'La empresa no existe.',
+                field: 'CompanyId'
+            });
         }
 
-        // Check if company exists
-        try {
-            // We can use the query builder to check if a company with this id exists
-            const companyExists = await this.serviceRepository.manager
-                .query('SELECT 1 FROM "Company" WHERE "Id" = $1', [createServiceDto.CompanyId]);
-            
-            if (!companyExists || companyExists.length === 0) {
-                throw new NotFoundException(`Company with ID ${createServiceDto.CompanyId} not found`);
-            }
+        const existingCategory = await this.serviceRepository.findOne({
+            where: { CategoryId: createServiceDto.CategoryId }
+        });
+        if (!existingCategory) {
+            errors.push({
+                code: 'CATEGORIA_NO_EXISTE',
+                message: 'La categoría no existe.',
+                field: 'CategoryId'
+            });
+        }
 
-            // Check if category exists
-            const categoryExists = await this.serviceRepository.manager
-                .query('SELECT 1 FROM "CategoryService" WHERE "Id" = $1', [createServiceDto.CategoryId]);
-                
-            if (!categoryExists || categoryExists.length === 0) {
-                throw new NotFoundException(`Category with ID ${createServiceDto.CategoryId} not found`);
-            }
-        } catch (error) {
-            if (error instanceof NotFoundException) {
-                throw error;
-            }
-            throw new BadRequestException('Error validating company or category');
+        if (errors.length > 0) {
+            throw new ConflictException(errors, "Error en la creación del servicio");
         }
     }
 
     async create(createServiceDto: CreateServiceDto): Promise<ServiceEntity> {
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
         try {
             await this.validateCreate(createServiceDto);
-            
-            return await super.create(createServiceDto);
+            const { ServiceStages, ...serviceData } = createServiceDto;
+            const entity = this.serviceRepository.create(serviceData);
+            const savedEntity = await queryRunner.manager.save(entity);
+
+            if (ServiceStages && Array.isArray(ServiceStages) && ServiceStages.length > 0) {
+                const serviceStageEntities = await this.serviceStageService.createMany(
+                    queryRunner,
+                    savedEntity.Id,
+                    ServiceStages
+                );
+                savedEntity.ServiceStages = serviceStageEntities;
+            }
+
+            await queryRunner.commitTransaction();
+            await this.afterCreate(savedEntity);
+            return savedEntity;
+
         } catch (error) {
-            if (error instanceof BadRequestException ||
-                error instanceof ConflictException ||
-                error instanceof NotFoundException) {
+            await queryRunner.rollbackTransaction();
+
+            if (error instanceof BadRequestException || error instanceof ConflictException) {
                 throw error;
             }
 
             if (error.code === '23505') {
-                throw new ConflictException('A service with this data already exists');
+                throw new ConflictException(
+                    [{
+                        code: 'YA_EXISTE_SERVICIO',
+                        message: 'Ya existe un servicio con estos datos',
+                        field: 'service'
+                    }],
+                    'Ya existe un servicio con estos datos'
+                );
             }
 
-            // Handle foreign key constraint errors with more specific messages
-            if (error.code === '23503') { // Foreign key constraint error
-                if (error.detail?.includes('company_id')) {
-                    throw new NotFoundException(`Company with ID ${createServiceDto.CompanyId} not found`);
-                }
-                if (error.detail?.includes('category_id')) {
-                    throw new NotFoundException(`Category with ID ${createServiceDto.CategoryId} not found`);
-                }
-                throw new BadRequestException(`Foreign key constraint error: ${error.detail}`);
-            }
-
-            console.error('Error in create:', error);
-            throw new BadRequestException(`Error creating the service: ${error.message}`);
+            throw new BadRequestException(
+                [{
+                    code: 'ERROR_CREACION_SERVICIO',
+                    message: `Ha ocurrido un error inesperado: ${error.message || 'Error desconocido'}`,
+                    field: 'service'
+                }],
+                'Ha ocurrido un error inesperado'
+            );
+        } finally {
+            await queryRunner.release();
         }
     }
 
+
     protected async validateUpdate(id: number, updateServiceDto: UpdateServiceDto): Promise<void> {
+        const errors: ApiErrorItem[] = [];
+
+        let service: ServiceEntity;
         try {
-            const service = await this.findOne(id);
-
-            // If updating prices, validate them
-            const minPrice = updateServiceDto.IMinimalPrice !== undefined ? updateServiceDto.IMinimalPrice : service.IMinimalPrice;
-            const maxPrice = updateServiceDto.IMaximalPrice !== undefined ? updateServiceDto.IMaximalPrice : service.IMaximalPrice;
-            const regPrice = updateServiceDto.IRegularPrice !== undefined ? updateServiceDto.IRegularPrice : service.IRegularPrice;
-
-            if (minPrice > maxPrice) {
-                throw new BadRequestException('Minimal price cannot be greater than maximal price');
-            }
-
-            if (regPrice < minPrice || regPrice > maxPrice) {
-                throw new BadRequestException('Regular price must be within the range of minimal and maximal price');
-            }
-            
+            service = await this.findOne(id);
         } catch (error) {
-            if (error instanceof NotFoundException || error instanceof ConflictException || error instanceof BadRequestException) {
-                throw error;
+            if (error instanceof NotFoundException) {
+                throw new NotFoundException([
+                    {
+                        code: 'SERVICIO_NO_EXISTE',
+                        message: `El servicio con ID ${id} no existe`,
+                        field: 'id'
+                    }
+                ], `El servicio con ID ${id} no existe`);
             }
-            throw new BadRequestException('Error validating service update');
+            throw error;
+        }
+
+        if (updateServiceDto.VcName && updateServiceDto.VcName !== service.VcName) {
+            const existingService = await this.serviceRepository.findOne({
+                where: { VcName: updateServiceDto.VcName }
+            });
+            if (existingService) {
+                errors.push({
+                    code: 'NOMBRE_YA_EXISTE',
+                    message: 'Ya existe un servicio con este nombre.',
+                    field: 'VcName'
+                });
+            }
+        }
+
+        if (updateServiceDto.CompanyId !== undefined) {
+            const existingCompany = await this.serviceRepository.findOne({
+                where: { CompanyId: updateServiceDto.CompanyId }
+            });
+            if (!existingCompany) {
+                errors.push({
+                    code: 'EMPRESA_NO_EXISTE',
+                    message: 'La empresa no existe.',
+                    field: 'CompanyId'
+                });
+            }
+        }
+
+        if (updateServiceDto.CategoryId !== undefined) {
+            const existingCategory = await this.serviceRepository.findOne({
+                where: { CategoryId: updateServiceDto.CategoryId }
+            });
+            if (!existingCategory) {
+                errors.push({
+                    code: 'CATEGORIA_NO_EXISTE',
+                    message: 'La categoría no existe.',
+                    field: 'CategoryId'
+                });
+            }
+        }
+
+        if (errors.length > 0) {
+            throw new ConflictException(errors, "Error en la actualización del servicio");
         }
     }
 
     async update(id: number, updateServiceDto: UpdateServiceDto): Promise<ServiceEntity> {
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
         try {
             await this.validateUpdate(id, updateServiceDto);
-            
-            const existingEntity = await this.findOne(id);
-            
-            // Update fields that are included in the DTO
-            if (updateServiceDto.VcName !== undefined) {
-                existingEntity.VcName = updateServiceDto.VcName;
+            const { ServiceStages, ...serviceData } = updateServiceDto;
+            const existingEntity = await this.serviceRepository.findOne({
+                where: { Id: id },
+                relations: ['ServiceStages']
+            });
+
+            if (!existingEntity) {
+                throw new NotFoundException([
+                    {
+                        code: 'SERVICIO_NO_EXISTE',
+                        message: `El servicio con ID ${id} no existe`,
+                        field: 'id'
+                    }
+                ], `El servicio con ID ${id} no existe`);
             }
-            if (updateServiceDto.VcDescription !== undefined) {
-                existingEntity.VcDescription = updateServiceDto.VcDescription;
+
+            Object.assign(existingEntity, serviceData);
+            const updatedEntity = await queryRunner.manager.save(existingEntity);
+
+            if (ServiceStages && Array.isArray(ServiceStages) && ServiceStages.length > 0) {
+                if (existingEntity.ServiceStages && existingEntity.ServiceStages.length > 0) {
+                    await queryRunner.manager.delete('ServiceStage', { ServiceId: id });
+                }
+
+                const createDtos = ServiceStages.map(stage => ({
+                    ISequence: stage.ISequence,
+                    IDurationMinutes: stage.IDurationMinutes,
+                    VcDescription: stage.VcDescription,
+                    BIsProfessionalBussy: stage.BIsProfessionalBussy,
+                    BIsActive: stage.BIsActive !== undefined ? stage.BIsActive : true
+                }));
+                
+                const serviceStageEntities = await this.serviceStageService.createMany(
+                    queryRunner,
+                    updatedEntity.Id,
+                    createDtos
+                );
+                updatedEntity.ServiceStages = serviceStageEntities;
             }
-            if (updateServiceDto.IMinimalPrice !== undefined) {
-                existingEntity.IMinimalPrice = updateServiceDto.IMinimalPrice;
-            }
-            if (updateServiceDto.IMaximalPrice !== undefined) {
-                existingEntity.IMaximalPrice = updateServiceDto.IMaximalPrice;
-            }
-            if (updateServiceDto.IRegularPrice !== undefined) {
-                existingEntity.IRegularPrice = updateServiceDto.IRegularPrice;
-            }
-            if (updateServiceDto.DTaxes !== undefined) {
-                existingEntity.DTaxes = updateServiceDto.DTaxes;
-            }
-            if (updateServiceDto.VcTime !== undefined) {
-                existingEntity.VcTime = updateServiceDto.VcTime;
-            }
-            if (updateServiceDto.CompanyId !== undefined) {
-                existingEntity.CompanyId = updateServiceDto.CompanyId;
-            }
-            if (updateServiceDto.CategoryId !== undefined) {
-                existingEntity.CategoryId = updateServiceDto.CategoryId;
-            }
-            
-            return await this.serviceRepository.save(existingEntity);
+
+            await queryRunner.commitTransaction();
+            return updatedEntity;
         } catch (error) {
-            console.error('Error in update:', error);
-            if (error instanceof NotFoundException || 
-                error instanceof ConflictException || 
-                error instanceof BadRequestException) {
+            await queryRunner.rollbackTransaction();
+
+            if (error instanceof NotFoundException ||
+                error instanceof BadRequestException ||
+                error instanceof ConflictException) {
                 throw error;
             }
-            throw new BadRequestException('Error updating the service');
+
+            if (error.code === '23505') {
+                throw new ConflictException(
+                    [{
+                        code: 'YA_EXISTE_SERVICIO',
+                        message: 'Ya existe un servicio con estos datos',
+                        field: 'service'
+                    }],
+                    'Ya existe un servicio con estos datos'
+                );
+            }
+
+            throw new BadRequestException([
+                {
+                    code: 'ERROR_ACTUALIZAR',
+                    message: `Ha ocurrido un error al actualizar el servicio: ${error.message || 'Error desconocido'}`,
+                    field: 'service'
+                }
+            ], 'Ha ocurrido un error inesperado');
+        } finally {
+            await queryRunner.release();
         }
     }
 

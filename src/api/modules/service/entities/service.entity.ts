@@ -1,6 +1,9 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany, Index } from 'typeorm';
 import { CompanyEntity } from '../../company/entities/company.entity';
 import { CategoryServiceEntity } from '../../categoryService/entities/categoryService.entity';
+import { ServiceStageEntity } from './serviceStage.entity';
+import { ProfessionalServiceEntity } from '../../professional/entities/professionalService.entity';
+import { AppointmentEntity } from '../../appointment/entities/appointment.entity';
 
 @Entity('Service')
 export class ServiceEntity {
@@ -28,17 +31,22 @@ export class ServiceEntity {
     @Column({ name: 'vc_time', type: 'varchar', length: 20 })
     VcTime: string;
 
+    @Column({ name: 'tx_picture', type: 'text', nullable: true })
+    TxPicture: string;
+
+    @Index()
     @Column({ name: 'company_id', type: 'int' })
     CompanyId: number;
 
+    @Index()
     @Column({ name: 'category_id', type: 'int' })
     CategoryId: number;
 
-    @ManyToOne(() => CompanyEntity)
+    @ManyToOne(() => CompanyEntity, company => company.Services)
     @JoinColumn({ name: 'company_id' })
     Company: CompanyEntity;
 
-    @ManyToOne(() => CategoryServiceEntity)
+    @ManyToOne(() => CategoryServiceEntity, category => category.Services)
     @JoinColumn({ name: 'category_id' })
     Category: CategoryServiceEntity;
 
@@ -47,4 +55,13 @@ export class ServiceEntity {
 
     @UpdateDateColumn({ name: 'updated_at' })
     updated_at: Date;
+
+    @OneToMany(() => ServiceStageEntity, serviceStage => serviceStage.Service)
+    ServiceStages: ServiceStageEntity[];
+
+    @OneToMany(() => ProfessionalServiceEntity, professionalService => professionalService.Service)
+    ProfessionalServices: ProfessionalServiceEntity[];
+
+    @OneToMany(() => AppointmentEntity, appointment => appointment.Service)
+    Appointments: AppointmentEntity[];
 }

@@ -1,4 +1,7 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { ProfessionalServiceEntity } from './professionalService.entity';
+import { ProfessionalBussinessHourEntity } from './professionalBussinessHour.entity';
+import { AppointmentEntity } from '../../appointment/entities/appointment.entity';
 
 @Entity('Professional')
 export class ProfessionalEntity {
@@ -32,8 +35,8 @@ export class ProfessionalEntity {
     @Column({ name: 'i_years_of_experience', type: 'int', default: 0 })
     IYearsOfExperience: number;
 
-    @Column({ name: 'vc_photo', type: 'varchar', length: 255, nullable: true })
-    VcPhoto?: string;
+    @Column({ name: 'tx_photo', type: 'text', nullable: true })
+    TxPhoto?: string;
 
     @Column({ name: 'vc_profession', type: 'varchar', length: 100 })
     VcProfession: string;
@@ -46,4 +49,13 @@ export class ProfessionalEntity {
 
     @UpdateDateColumn({ name: 'updated_at' })
     updated_at: Date;
+
+    @OneToMany(() => ProfessionalServiceEntity, professionalService => professionalService.Professional)
+    Services: ProfessionalServiceEntity[];
+
+    @OneToMany(() => ProfessionalBussinessHourEntity, professionalBussinessHour => professionalBussinessHour.Professional)
+    BussinessHours: ProfessionalBussinessHourEntity[];
+
+    @OneToMany(() => AppointmentEntity, appointment => appointment.Professional)
+    Appointments: AppointmentEntity[];
 }

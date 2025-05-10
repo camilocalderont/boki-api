@@ -1,3 +1,5 @@
+import { CreateCompanyBranchRoomDto } from './companyBranchRoomCreate.dto';
+
 export class CreateCompanyBranchDto {
   CompanyId: number;
   VcName: string;
@@ -8,4 +10,5 @@ export class CreateCompanyBranchDto {
   VcBranchManagerName?: string;
   VcImage?: string;
   BIsPrincipal?: boolean;
+  CompanyBranchRoom?: CreateCompanyBranchRoomDto[];
 }

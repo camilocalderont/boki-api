@@ -1,3 +1,5 @@
+import { CreateServiceStageDto } from './serviceStageCreate.dto';
+
 export class CreateServiceDto {
     VcName: string;
     VcDescription?: string;
@@ -8,4 +10,6 @@ export class CreateServiceDto {
     VcTime: string;
     CompanyId: number;
     CategoryId: number;
+    TxPicture?: string;
+    ServiceStages?: CreateServiceStageDto[];
 }

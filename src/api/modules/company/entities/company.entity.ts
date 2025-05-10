@@ -1,4 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { ServiceEntity } from '../../service/entities/service.entity';
+import { CompanyBlockedTimeEntity } from './companyBlockedTime.entity';
 
 @Entity('Company')
 export class CompanyEntity {
@@ -23,8 +25,11 @@ export class CompanyEntity {
     @Column({ name: 'vc_legal_representative', type: 'varchar', length: 100, nullable: true })
     VcLegalRepresentative?: string;
 
-    @Column({ name: 'vc_logo', type: 'varchar', length: 255, nullable: true })
-    VcLogo?: string;
+    @Column({ name: 'i_frequency_scheduling', type: 'int', default: 10 })
+    IFrequencyScheduling: number;
+
+    @Column({ name: 'tx_logo', type: 'text', nullable: true })
+    TxLogo?: string;
 
     @Column({ name: 'tx_images', type: 'text', nullable: true })
     TxImages?: string;
@@ -34,4 +39,10 @@ export class CompanyEntity {
 
     @UpdateDateColumn({ name: 'updated_at' })
     updated_at: Date;
+
+    @OneToMany(() => ServiceEntity, service => service.Company)
+    Services: ServiceEntity[];
+
+    @OneToMany(() => CompanyBlockedTimeEntity, companyBlockedTime => companyBlockedTime.Company)
+    CompanyBlockedTimes: CompanyBlockedTimeEntity[];
 }
