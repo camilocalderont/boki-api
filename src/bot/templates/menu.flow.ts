@@ -12,6 +12,7 @@ export const menuFlow = addKeyword("Menu").addAnswer(
     menu,
     { capture: true },
     async (ctx, { gotoFlow, fallBack, flowDynamic }) => {
+        console.log(JSON.stringify(ctx));
         if (!["1", "2", "3", "4", "0"].includes(ctx.body)) {
             return fallBack(
                 "Respuesta no válida, por favor selecciona una de las opciones."
