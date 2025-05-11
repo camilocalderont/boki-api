@@ -5,6 +5,8 @@ import { ApiService } from '../services/api/api.service';
 
 const apiService = new ApiService();
 
+
+
 const registerFlow = addKeyword(EVENTS.ACTION)
 .addAnswer('👋 Hola, parece que eres nuevo por aquí.\n\n¿Quieres registrarte?\n\nResponde *SI* o *NO* (también puedes usar 1 o 0)',
     { capture: true }
@@ -60,7 +62,8 @@ const registerFlow = addKeyword(EVENTS.ACTION)
         VcIdentificationNumber: identificationNumber,
         VcFirstName: state.firstName,
         VcEmail: state.email,
-        VcPhone: ctx.body
+        VcPhone: ctx.body,
+        VcFirstLastName: ' ',
     };
 
     try {
@@ -81,5 +84,6 @@ const registerFlow = addKeyword(EVENTS.ACTION)
         await ctxFn.flowDynamic('❌ Lo siento, hubo un error al registrar tus datos. Por favor, intenta nuevamente más tarde.');
     }
 });
+
 
 export { registerFlow };
