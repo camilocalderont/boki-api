@@ -1,0 +1,22 @@
+{
+    "name": "@bokibot/bot",
+    "version": "1.0.0",
+    "main": "dist/main.js",
+    "scripts": {
+      "start": "node dist/main.js",
+      "start:dev": "tsx watch src/main.ts",
+      "build": "tsc -p tsconfig.json",
+      "test": "jest"
+    },
+    "dependencies": {
+      "@bokibot/core": "workspace:*",
+      "@builderbot/bot": "1.2.6",
+      "@builderbot/database-postgres": "1.2.6",
+      "@builderbot/provider-meta": "1.2.6",
+      "dotenv": "^16.4.7",
+      "axios": "^1.6.5",
+      "openai": "^4.85.4",
+      "pg": "^8.13.3",
+      "reflect-metadata": "^0.2.2"
+    }
+  }

@@ -1,33 +1,16 @@
 {
-  "compilerOptions": {
-    "module": "CommonJS",
-    "target": "ES2022",
-    "moduleResolution": "node",
-    "removeComments": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
-    "outDir": "./dist",
-    "baseUrl": "./",
-    "rootDir": "./",
-    "incremental": true,
-    "skipLibCheck": true,
-    "paths": {
-      "~/*": ["./src/*"]
-    },
-    "sourceMap": true,
-    "inlineSources": true,
-    "sourceRoot": "/",
-  },
-  "include": [
-    "src/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "**/*.test.ts",
-    "**/*.spec.ts",
-    "**/e2e/**",
-    "**/mock/**"
-  ]
-}
+    "compilerOptions": {
+      "target": "ES2022",
+      "module": "commonjs",
+      "strict": true,
+      "esModuleInterop": true,
+      "skipLibCheck": true,
+      "forceConsistentCasingInFileNames": true,
+
+      "baseUrl": ".",
+      "paths": {
+        "@bokibot/*": ["libs/*/src"],
+        "~/*": ["src/*"]             // si ya usabas este alias
+      }
+    }
+  }

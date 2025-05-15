@@ -1,0 +1,11 @@
+{
+    "name": "@bokibot/core",
+    "version": "1.0.0",
+    "main": "dist/index.js",
+    "scripts": { "build": "tsc -p tsconfig.json" },
+    "dependencies": {
+        "joi": "^17.13.3",
+        "class-validator": "^0.14.1",
+        "class-transformer": "^0.5.1"
+    }
+  }
