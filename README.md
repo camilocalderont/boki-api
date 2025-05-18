@@ -8,12 +8,12 @@
 graph TD
     User[Usuario Cliente] -->|Utiliza| API[API BokiBot]
     FrontEndApp[Aplicación Frontend] -->|Consume| API
-    WhatsAppBot[Bot Externo WhatsApp] -->|Interactúa vía HTTP| API
-    API -->|Almacena Datos| DB[(Base de Datos)]
+    ExternalBotService[Servicio Bot Python] -->|Interactúa vía HTTP| API
+    API -->|Almacena Datos| DB[(Base de Datos PostgreSQL)]
     API -->|Autentica| Auth[Servicio de Autenticación]
 ```
 
-El sistema BokiBot API es una aplicación NestJS que proporciona endpoints RESTful. Interactúa con una aplicación Frontend, un Bot de WhatsApp externo y una base de datos.
+El sistema BokiBot API es una aplicación NestJS que proporciona endpoints RESTful. Interactúa con una aplicación Frontend, un Bot externo desarrollado en Python (en un repositorio separado) y una base de datos PostgreSQL.
 
 ### Diagrama C3: Arquitectura de Componentes API
 
@@ -23,14 +23,17 @@ graph TD
         Controllers[Controladores API] --> Services[Servicios de Dominio]
         Services --> Repositories[Repositorios de Datos]
         Interceptors[Interceptor de Respuesta] -->|Formatea| Controllers
-        ExceptionFilter[Filtro de Excepciones] -->|Maneja Errores| Controllers
-        Pipes[Pipes de Validación] -->|Valida Entrada| Controllers
+        DateFormatInterceptor[Interceptor de Formato de Fecha] -->|Formatea| Controllers
+        ExceptionFilter[Filtro de Excepciones HTTP] -->|Maneja Errores| Controllers
+        AllExceptionsFilter[Filtro General de Excepciones] -->|Maneja Errores| Controllers
+        ValidationPipe[Pipe de Validación] -->|Valida Entrada| Controllers
+        ApiTokenGuard[Guard de Token API] -->|Protege Rutas| Controllers
         Repositories --> DBAccess[Entidades TypeORM]
     end
 
     DBAccess -->|Conecta a| Database[(PostgreSQL)]
-    AuthService[Servicio de Autenticación Externo]
-    Controllers -->|Usa para autenticar| AuthService
+    ExternalAuth[Servicio de Autenticación]
+    Controllers -->|Usa para autenticar| ExternalAuth
 ```
 
 ### Diagrama de Flujo de Solicitud API (Estado)
@@ -40,7 +43,7 @@ stateDiagram-v2
     [*] --> Recibiendo_Solicitud
     Recibiendo_Solicitud --> Middleware_Globales: Pasa por middleware (CORS, logging, etc.)
     Middleware_Globales --> Routing: NestJS dirige a ruta específica
-    Routing --> Guards: Ejecución de Guards (Autenticación, Autorización)
+    Routing --> Guards: Ejecución de Guards (ApiTokenGuard)
     Guards -- Fracaso --> Filtro_Excepciones
     Guards -- Éxito --> Pipes_Validacion: Validación de DTOs
     Pipes_Validacion -- Fracaso --> Filtro_Excepciones
@@ -52,7 +55,8 @@ stateDiagram-v2
     Repositorio --> Servicio: Retorna resultado a servicio
     Servicio --> Controlador: Retorna resultado al controlador
     Controlador --> Interceptor_Respuesta: Transforma respuesta
-    Interceptor_Respuesta --> Envio_Respuesta: Respuesta HTTP enviada al cliente
+    Interceptor_Respuesta --> Interceptor_Formato_Fecha: Formatea fechas en respuesta
+    Interceptor_Formato_Fecha --> Envio_Respuesta: Respuesta HTTP enviada al cliente
     Envio_Respuesta --> [*]
     Filtro_Excepciones --> Envio_Respuesta: Formatea y envía error HTTP
 ```
@@ -97,11 +101,27 @@ Los módulos de alto nivel no dependen de módulos de bajo nivel; ambos dependen
 src/
   |-- api/                     # Contenedor API
   |     |-- modules/           # Módulos de dominio
+  |     |     |-- appointment/ # Módulo de citas
+  |     |     |-- categoryService/ # Módulo de categorías de servicio
+  |     |     |-- client/      # Módulo de clientes
+  |     |     |-- company/     # Módulo de empresas
+  |     |     |-- companyBranch/ # Módulo de sucursales
+  |     |     |-- faqs/        # Módulo de preguntas frecuentes
+  |     |     |-- professional/ # Módulo de profesionales
+  |     |     |-- service/     # Módulo de servicios
+  |     |     |-- tags/        # Módulo de etiquetas
+  |     |     |-- users/       # Módulo de usuarios
+  |     |
   |     |-- shared/            # Componentes compartidos (interceptors, filters, pipes, services base)
   |     |-- database/          # Configuración de base de datos, migraciones, entidades
-  |     |-- config/            # Configuración de aplicación (env, Joi)
-  |-- app.module.ts            # Módulo raíz de la aplicación API
-  |-- main.ts                  # Punto de entrada de la aplicación API
+  |     |     |-- migrations/  # Migraciones TypeORM
+  |     |     |-- seeds/       # Seeders para datos iniciales
+  |     |
+  |     |-- config.ts          # Configuración de la API
+  |     |-- main.ts            # Punto de entrada de la aplicación API
+  |     |-- app.module.ts      # Módulo raíz de la aplicación API
+  |
+  |-- app.ts                   # Punto de entrada principal de la aplicación
 ```
 
 ### Componentes Clave y Sus Roles
@@ -109,7 +129,7 @@ src/
 #### Capa API
 - **Controladores**: Manejan peticiones HTTP, validan entradas, delegan a servicios
 - **DTOs**: Definen objetos de transferencia de datos para validación de entrada
-- **Esquemas**: Contienen reglas de validación Joi para los DTOs
+- **Esquemas**: Contienen reglas de validación para los DTOs
 
 #### Capa de Servicio
 - **Servicios de Dominio**: Implementan lógica de negocio y orquestan operaciones
@@ -120,9 +140,14 @@ src/
 - **Repositorios**: Gestionan acceso a datos y encapsulan consultas
 
 #### Aspectos Transversales
-- **Interceptores**: Formatean todas las respuestas de manera consistente
-- **Filtros de Excepción**: Estandarizan el manejo de errores
+- **Interceptores**:
+  - **ResponseInterceptor**: Formatea todas las respuestas de manera consistente
+  - **DateFormatInterceptor**: Formatea fechas en las respuestas
+- **Filtros de Excepción**:
+  - **HttpExceptionFilter**: Estandariza el manejo de errores HTTP
+  - **AllExceptionsFilter**: Captura y maneja cualquier excepción no controlada
 - **Pipes de Validación**: Aseguran que los datos de entrada cumplan con las reglas
+- **Guards**: Protegen rutas según requisitos de autenticación/autorización
 
 ## Estándares de Respuesta API
 
@@ -154,24 +179,29 @@ Este formato se mantiene mediante:
 - **Interceptor de Respuesta**: Transforma automáticamente todas las respuestas al formato estándar
 - **Filtro de Excepciones HTTP**: Captura y formatea errores de manera consistente
 
-## Validación con Joi
+## Validación
 
-BokiBot utiliza Joi para validación de datos de entrada:
+BokiBot utiliza el módulo de validación incorporado de NestJS junto con class-validator:
 
-1. **Definición de esquemas**:
+1. **Definición de DTOs**:
    ```typescript
-   // schemas/userCreate.schema.ts
-   export const createUserSchema = Joi.object({
-     email: Joi.string().email().required(),
-     password: Joi.string().min(8).required()
-   });
+   // dto/create-user.dto.ts
+   import { IsEmail, IsString, MinLength } from 'class-validator';
+
+   export class CreateUserDto {
+     @IsEmail()
+     email: string;
+
+     @IsString()
+     @MinLength(8)
+     password: string;
+   }
    ```
 
 2. **Uso en controladores**:
    ```typescript
    @Post()
-   @UseJoiValidationPipe(instance => instance.createSchema)
-   async create(@Body() createDto: CreateDto): Promise<ApiControllerResponse<T>> {
+   async create(@Body() createDto: CreateUserDto): Promise<ApiControllerResponse<T>> {
      // Implementación...
    }
    ```
@@ -194,13 +224,14 @@ cd bokibot-api
 # Instalar dependencias
 npm install
 
-# Configurar variables de entorno
-cp .env.example .env
-# Editar .env con tus configuraciones:
-#   - Conexión a Base de Datos (POSTGRES_HOST, POSTGRES_PORT, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DATABASE)
-#   - Puerto de la API (API_PORT)
-#   - Secretos JWT (JWT_SECRET, JWT_EXPIRES_IN)
-#   - URLs de servicios externos si los hay (ej. AUTH_SERVICE_URL)
+# Configurar variables de entorno (crear archivo .env)
+# Variables necesarias:
+# API_PORT=3000
+# POSTGRES_DB_HOST=localhost
+# POSTGRES_DB_PORT=5432
+# POSTGRES_DB_USER=postgres
+# POSTGRES_DB_PASSWORD=your_password
+# POSTGRES_DB_NAME=bokibot_db
 
 # Ejecutar migraciones de base de datos
 npm run migration:run
@@ -223,23 +254,13 @@ BokiBot está configurado para una depuración sencilla usando VS Code:
 
 #### Método 1: Usando VS Code directamente
 1. Abrir el proyecto en VS Code
-2. Presionar F5 o seleccionar "Debug NestJS con tsx (watch)" en el menú de depuración
+2. Presionar F5 o seleccionar "Debug NestJS" en el menú de depuración
 3. Establecer puntos de interrupción donde lo necesites
 
 #### Método 2: Terminal + VS Code
 1. Ejecutar en la terminal: `npm run debug:simple`
 2. En VS Code, seleccionar "Attach to Node Process"
 3. Seleccionar el proceso de node que está ejecutando la aplicación
-
-#### Uso de Puntos de Interrupción Explícitos
-Si los puntos de interrupción no se activan correctamente, puedes añadir la palabra clave `debugger;` en tu código:
-
-```typescript
-intercept(context: ExecutionContext, next: CallHandler): Observable<ApiSuccessResponse<T>> {
-  debugger; // El depurador se detendrá aquí
-  // Resto del código...
-}
-```
 
 ## Creando un Nuevo Módulo
 
@@ -264,10 +285,6 @@ src/api/modules/tu-modulo/
   |-- entities/
   |     |-- tu-modulo.entity.ts
   |
-  |-- schemas/
-  |     |-- tu-modulo-create.schema.ts
-  |     |-- tu-modulo-update.schema.ts
-  |
   |-- tu-modulo.module.ts
 ```
 
@@ -289,22 +306,19 @@ export class TuModuloEntity {
 }
 ```
 
-### 3. Crea DTOs y Esquemas
+### 3. Crea DTOs
 
 ```typescript
 // dto/tu-modulo-create.dto.ts
+import { IsString, IsNotEmpty } from 'class-validator';
+
 export class CreateTuModuloDto {
+  @IsString()
+  @IsNotEmpty()
   nombre: string;
+
   // Otras propiedades...
 }
-
-// schemas/tu-modulo-create.schema.ts
-import * as Joi from 'joi';
-
-export const createTuModuloSchema = Joi.object({
-  nombre: Joi.string().required(),
-  // Reglas de validación...
-});
 ```
 
 ### 4. Implementa el Servicio
@@ -317,18 +331,36 @@ import { Repository } from 'typeorm';
 import { TuModuloEntity } from '../entities/tu-modulo.entity';
 import { CreateTuModuloDto } from '../dto/tu-modulo-create.dto';
 import { UpdateTuModuloDto } from '../dto/tu-modulo-update.dto';
-import { BaseCrudService } from '../../../shared/services/crud.services';
 
 @Injectable()
-export class TuModuloService extends BaseCrudService<TuModuloEntity, CreateTuModuloDto, UpdateTuModuloDto> {
+export class TuModuloService {
   constructor(
     @InjectRepository(TuModuloEntity)
     private readonly tuModuloRepository: Repository<TuModuloEntity>
-  ) {
-    super(tuModuloRepository);
+  ) {}
+
+  async findAll() {
+    return this.tuModuloRepository.find();
   }
 
-  // Métodos personalizados o sobreescrituras...
+  async findOne(id: number) {
+    return this.tuModuloRepository.findOneBy({ id });
+  }
+
+  async create(createDto: CreateTuModuloDto) {
+    const newEntity = this.tuModuloRepository.create(createDto);
+    return this.tuModuloRepository.save(newEntity);
+  }
+
+  async update(id: number, updateDto: UpdateTuModuloDto) {
+    await this.tuModuloRepository.update(id, updateDto);
+    return this.findOne(id);
+  }
+
+  async remove(id: number) {
+    const entity = await this.findOne(id);
+    return this.tuModuloRepository.remove(entity);
+  }
 }
 ```
 
@@ -336,25 +368,41 @@ export class TuModuloService extends BaseCrudService<TuModuloEntity, CreateTuMod
 
 ```typescript
 // controllers/tu-modulo.controller.ts
-import { Controller, Inject } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Delete } from '@nestjs/common';
 import { TuModuloService } from '../services/tu-modulo.service';
-import { TuModuloEntity } from '../entities/tu-modulo.entity';
 import { CreateTuModuloDto } from '../dto/tu-modulo-create.dto';
 import { UpdateTuModuloDto } from '../dto/tu-modulo-update.dto';
-import { BaseCrudController } from '../../../shared/controllers/crud.controller';
-import { createTuModuloSchema } from '../schemas/tu-modulo-create.schema';
-import { updateTuModuloSchema } from '../schemas/tu-modulo-update.schema';
 
 @Controller('tu-modulo')
-export class TuModuloController extends BaseCrudController<TuModuloEntity, CreateTuModuloDto, UpdateTuModuloDto> {
+export class TuModuloController {
   constructor(
-    @Inject(TuModuloService)
     private readonly tuModuloService: TuModuloService
-  ) {
-    super(tuModuloService, 'tu-modulo', createTuModuloSchema, updateTuModuloSchema);
+  ) {}
+
+  @Get()
+  async findAll() {
+    return this.tuModuloService.findAll();
   }
 
-  // Endpoints personalizados...
+  @Get(':id')
+  async findOne(@Param('id') id: number) {
+    return this.tuModuloService.findOne(id);
+  }
+
+  @Post()
+  async create(@Body() createDto: CreateTuModuloDto) {
+    return this.tuModuloService.create(createDto);
+  }
+
+  @Put(':id')
+  async update(@Param('id') id: number, @Body() updateDto: UpdateTuModuloDto) {
+    return this.tuModuloService.update(id, updateDto);
+  }
+
+  @Delete(':id')
+  async remove(@Param('id') id: number) {
+    return this.tuModuloService.remove(id);
+  }
 }
 ```
 
@@ -393,16 +441,35 @@ import { TuModuloModule } from './modules/tu-modulo/tu-modulo.module';
 export class AppModule {}
 ```
 
+## Variables de Entorno
+
+El proyecto requiere las siguientes variables de entorno:
+
+```
+# Configuración de la API
+API_PORT=3000                           # Puerto en el que escucha la API
+
+# Configuración de Base de Datos
+POSTGRES_DB_HOST=localhost              # Host de la base de datos PostgreSQL
+POSTGRES_DB_PORT=5432                   # Puerto de PostgreSQL
+POSTGRES_DB_USER=postgres               # Usuario de PostgreSQL
+POSTGRES_DB_PASSWORD=your_password      # Contraseña de PostgreSQL
+POSTGRES_DB_NAME=bokibot_db             # Nombre de la base de datos
+
+# Configuración de Seguridad
+API_TOKEN_SECRET=your_api_token_secret  # Secreto para los tokens de API
+```
+
 ## Mejores Prácticas
 
-1. **Mantén las interfaces limpias**: Los DTOs deben definir solo propiedades, sin lógica.
-2. **Separa validación de definición de datos**: Usa esquemas Joi para validación, no decoradores en DTOs.
-3. **Extiende, no modifiques**: Utiliza los puntos de extensión proporcionados en clases base.
+1. **Mantén las interfaces limpias**: Los DTOs deben definir solo propiedades, junto con sus validaciones.
+2. **Separa la lógica de negocio**: Mantén la lógica de negocio en los servicios, no en los controladores.
+3. **Extiende, no modifiques**: Utiliza la herencia para extender funcionalidad.
 4. **Manejo consistente de errores**: Lanza excepciones estándar (BadRequestException, NotFoundException, etc.).
-5. **Prueba los límites de tu dominio**: Implementa validaciones personalizadas en los métodos `validateCreate`, `validateUpdate`.
+5. **Documentación con Swagger**: Usa decoradores Swagger para documentar tus APIs.
 
 ## Conclusión
 
-BokiBot API está diseñado siguiendo principios sólidos de arquitectura que facilitan el mantenimiento y la extensión del sistema. La arquitectura en capas, los componentes base reutilizables y los mecanismos de respuesta estandarizados permiten a los desarrolladores centrarse en implementar funcionalidades de negocio sin preocuparse por los detalles de infraestructura.
+BokiBot API está diseñado siguiendo principios sólidos de arquitectura que facilitan el mantenimiento y la extensión del sistema. La arquitectura en capas, los componentes reutilizables y los mecanismos de respuesta estandarizados permiten a los desarrolladores centrarse en implementar funcionalidades de negocio sin preocuparse por los detalles de infraestructura.
 
 Al seguir las guías de este manual, podrás contribuir al proyecto `bokibot-api` manteniendo la consistencia y calidad del código establecidas.
