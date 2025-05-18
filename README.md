@@ -1,4 +1,4 @@
-# Manual Técnico de BokiBot
+# Manual Técnico de BokiBot API
 
 ## Arquitectura del Sistema
 
@@ -7,21 +7,15 @@
 ```mermaid
 graph TD
     User[Usuario Cliente] -->|Utiliza| API[API BokiBot]
-    WhatsApp[Usuario WhatsApp] -->|Mensajes| Bot[Bot WhatsApp BokiBot]
-    API <-->|Comparte Datos| Bot
+    FrontEndApp[Aplicación Frontend] -->|Consume| API
+    WhatsAppBot[Bot Externo WhatsApp] -->|Interactúa vía HTTP| API
     API -->|Almacena Datos| DB[(Base de Datos)]
-    Bot -->|Almacena Datos| DB
     API -->|Autentica| Auth[Servicio de Autenticación]
-    Bot -->|Utiliza LLM| LLM[Modelos de Lenguaje]
 ```
 
-El sistema BokiBot consta de dos contenedores principales:
-1. **API BokiBot** - Aplicación NestJS que proporciona endpoints RESTful
-2. **Bot WhatsApp BokiBot** - Maneja interacciones de WhatsApp usando @builderbot/bot
+El sistema BokiBot API es una aplicación NestJS que proporciona endpoints RESTful. Interactúa con una aplicación Frontend, un Bot de WhatsApp externo y una base de datos.
 
-Estos contenedores comparten la misma base de código y base de datos, pero sirven diferentes interfaces a los usuarios.
-
-### Diagrama C3: Arquitectura de Componentes
+### Diagrama C3: Arquitectura de Componentes API
 
 ```mermaid
 graph TD
@@ -30,24 +24,42 @@ graph TD
         Services --> Repositories[Repositorios de Datos]
         Interceptors[Interceptor de Respuesta] -->|Formatea| Controllers
         ExceptionFilter[Filtro de Excepciones] -->|Maneja Errores| Controllers
+        Pipes[Pipes de Validación] -->|Valida Entrada| Controllers
         Repositories --> DBAccess[Entidades TypeORM]
     end
 
-    subgraph "Contenedor WhatsApp BokiBot"
-        BotService[Servicio Bot] --> FlowTemplates[Flujos de Conversación]
-        BotService --> Provider[Proveedor WhatsApp]
-        BotService --> Services
-        Provider -->|Envía/Recibe| WhatsApp[API WhatsApp]
-        FlowTemplates --> LLMService[Servicio LLM]
-    end
-
     DBAccess -->|Conecta a| Database[(PostgreSQL)]
-    LLMService -->|Llama a| ExternalLLM[API LLM Externa]
+    AuthService[Servicio de Autenticación Externo]
+    Controllers -->|Usa para autenticar| AuthService
+```
+
+### Diagrama de Flujo de Solicitud API (Estado)
+
+```mermaid
+stateDiagram-v2
+    [*] --> Recibiendo_Solicitud
+    Recibiendo_Solicitud --> Middleware_Globales: Pasa por middleware (CORS, logging, etc.)
+    Middleware_Globales --> Routing: NestJS dirige a ruta específica
+    Routing --> Guards: Ejecución de Guards (Autenticación, Autorización)
+    Guards -- Fracaso --> Filtro_Excepciones
+    Guards -- Éxito --> Pipes_Validacion: Validación de DTOs
+    Pipes_Validacion -- Fracaso --> Filtro_Excepciones
+    Pipes_Validacion -- Éxito --> Controlador: Método del controlador invocado
+    Controlador --> Servicio: Llama al servicio de dominio
+    Servicio --> Repositorio: Accede/Modifica datos
+    Repositorio --> Base_de_Datos: Interactúa con BD
+    Base_de_Datos --> Repositorio: Retorna datos/estado
+    Repositorio --> Servicio: Retorna resultado a servicio
+    Servicio --> Controlador: Retorna resultado al controlador
+    Controlador --> Interceptor_Respuesta: Transforma respuesta
+    Interceptor_Respuesta --> Envio_Respuesta: Respuesta HTTP enviada al cliente
+    Envio_Respuesta --> [*]
+    Filtro_Excepciones --> Envio_Respuesta: Formatea y envía error HTTP
 ```
 
 ## Principios de Diseño Fundamentales
 
-BokiBot está construido sobre los principios SOLID y patrones de arquitectura limpia para garantizar mantenibilidad y escalabilidad:
+BokiBot API está construido sobre los principios SOLID y patrones de arquitectura limpia para garantizar mantenibilidad y escalabilidad:
 
 ### Principio de Responsabilidad Única (SRP)
 Cada clase tiene una sola razón para cambiar. Por ejemplo:
@@ -85,11 +97,11 @@ Los módulos de alto nivel no dependen de módulos de bajo nivel; ambos dependen
 src/
   |-- api/                     # Contenedor API
   |     |-- modules/           # Módulos de dominio
-  |     |-- shared/            # Componentes compartidos
-  |     |-- database/          # Configuración de base de datos
-  |     |-- config/            # Configuración de aplicación
-  |
-  |-- bot/                     # Contenedor Bot WhatsApp
+  |     |-- shared/            # Componentes compartidos (interceptors, filters, pipes, services base)
+  |     |-- database/          # Configuración de base de datos, migraciones, entidades
+  |     |-- config/            # Configuración de aplicación (env, Joi)
+  |-- app.module.ts            # Módulo raíz de la aplicación API
+  |-- main.ts                  # Punto de entrada de la aplicación API
 ```
 
 ### Componentes Clave y Sus Roles
@@ -167,23 +179,28 @@ BokiBot utiliza Joi para validación de datos de entrada:
 ## Cómo Ejecutar el Proyecto
 
 ### Requisitos Previos
-- Node.js v16 o superior
+- Node.js v18 o superior
 - npm o yarn
 - PostgreSQL
+- Un servicio de autenticación externo (si aplica según configuración)
 
 ### Instalación
 
 ```bash
 # Clonar el repositorio
-git clone https://github.com/tu-usuario/bokibot.git
-cd bokibot
+git clone https://github.com/tu-usuario/bokibot-api.git
+cd bokibot-api
 
 # Instalar dependencias
 npm install
 
 # Configurar variables de entorno
 cp .env.example .env
-# Editar .env con tus configuraciones
+# Editar .env con tus configuraciones:
+#   - Conexión a Base de Datos (POSTGRES_HOST, POSTGRES_PORT, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DATABASE)
+#   - Puerto de la API (API_PORT)
+#   - Secretos JWT (JWT_SECRET, JWT_EXPIRES_IN)
+#   - URLs de servicios externos si los hay (ej. AUTH_SERVICE_URL)
 
 # Ejecutar migraciones de base de datos
 npm run migration:run
@@ -226,11 +243,11 @@ intercept(context: ExecutionContext, next: CallHandler): Observable<ApiSuccessRe
 
 ## Creando un Nuevo Módulo
 
-Para crear un nuevo módulo en BokiBot, sigue estos pasos:
+Para crear un nuevo módulo en BokiBot API, sigue estos pasos:
 
 ### 1. Estructura de Carpetas
 
-Crea la siguiente estructura:
+Crea la siguiente estructura dentro de `src/api/modules/`:
 
 ```
 src/api/modules/tu-modulo/
@@ -386,6 +403,6 @@ export class AppModule {}
 
 ## Conclusión
 
-BokiBot está diseñado siguiendo principios sólidos de arquitectura que facilitan el mantenimiento y la extensión del sistema. La arquitectura en capas, los componentes base reutilizables y los mecanismos de respuesta estandarizados permiten a los desarrolladores centrarse en implementar funcionalidades de negocio sin preocuparse por los detalles de infraestructura.
+BokiBot API está diseñado siguiendo principios sólidos de arquitectura que facilitan el mantenimiento y la extensión del sistema. La arquitectura en capas, los componentes base reutilizables y los mecanismos de respuesta estandarizados permiten a los desarrolladores centrarse en implementar funcionalidades de negocio sin preocuparse por los detalles de infraestructura.
 
-Al seguir las guías de este manual, podrás contribuir al proyecto manteniendo la consistencia y calidad del código establecidas.
+Al seguir las guías de este manual, podrás contribuir al proyecto `bokibot-api` manteniendo la consistencia y calidad del código establecidas.
