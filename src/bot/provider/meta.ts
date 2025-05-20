@@ -11,5 +11,13 @@ export const provider = createProvider(Provider, {
     jwtToken: config.jwtToken,
     numberId: config.numberId,
     verifyToken: config.verifyToken,
-    version: config.version
+    version: config.version,
+    debug: true
 });
+
+provider.on('error', (err) => {
+    console.error('[meta-provider-error]', err?.response?.data ?? err);
+});
+provider.on('message', ({ body, from }) => {
+    console.log(`Message Payload:`, { body, from })
+})
