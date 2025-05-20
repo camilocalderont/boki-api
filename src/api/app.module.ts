@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 
 import { AppDataSource } from './database/database.module';
+import { MongoDBModule } from './database/mongodb/mongodb.module';
 import { ClientModule } from './modules/client/client.module';
 import { CompanyModule } from './modules/company/company.module';
 import { CompanyBranchModule } from './modules/companyBranch/companyBranch.module';
@@ -15,10 +16,12 @@ import { UsersModule } from './modules/users/users.module';
 import { AppointmentModule } from './modules/appointment/appointment.module';
 import { TagsModule } from './modules/tags/tags.module';
 import { FaqsModule } from './modules/faqs/faqs.module';
+import { ConversationModule } from './modules/conversation/conversation.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(AppDataSource.options),
+    MongoDBModule,
     ClientModule,
     CompanyModule,
     CompanyBranchModule,
@@ -28,7 +31,8 @@ import { FaqsModule } from './modules/faqs/faqs.module';
     UsersModule,
     AppointmentModule,
     TagsModule,
-    FaqsModule
+    FaqsModule,
+    ConversationModule
   ],
   controllers: [],
   providers: [
