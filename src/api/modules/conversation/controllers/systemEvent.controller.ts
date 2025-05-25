@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Query, Inject } from '@nestjs/common';
 import { SystemEventService } from '../services/systemEvent.service';
 import { CreateSystemEventDto } from '../dto/systemEvent/createSystemEvent.dto';
 import { ApiTokenGuard } from '../../../shared/utils/api-token.guard';
@@ -10,7 +10,10 @@ import { ApiControllerResponse } from '../../../shared/interfaces/api-response.i
 @Controller('system-events')
 @UseGuards(ApiTokenGuard)
 export class SystemEventController extends BaseMongoDbCrudController<SystemEventDocument, CreateSystemEventDto, any> {
-  constructor(private readonly systemEventService: SystemEventService) {
+  constructor(
+    @Inject('SystemEventService')
+    private readonly systemEventService: SystemEventService
+  ) {
     super(systemEventService, 'system-event', createSystemEventSchema, null);
   }
 

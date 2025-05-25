@@ -88,6 +88,18 @@ export class AllExceptionsFilter implements ExceptionFilter {
   catch(exception: any, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest<Request>();
+
+    // Loguear el error completo para diagnóstico en servidor
+    console.error('Error no controlado:', exception);
+    
+    if (exception.stack) {
+      console.error('Stack trace:', exception.stack);
+    }
+    
+    if (request.url) {
+      console.error('URL que causó el error:', request.url);
+    }
 
     const status =
       exception instanceof HttpException
@@ -99,15 +111,29 @@ export class AllExceptionsFilter implements ExceptionFilter {
         ? exception.message
         : 'Internal application error';
 
+    // Generar un código de error específico para diagnóstico
+    const errorId = Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
+    
     const errorResponse: ApiErrorResponse = {
       status: 'error',
       message,
       errors: [{
         code: 'INTERNAL_ERROR',
-        message,
+        message: process.env.NODE_ENV === 'development' ? 
+          `Error interno (ID: ${errorId}): ${exception.message || 'Error desconocido'}` :
+          `Internal application error (Error ID: ${errorId})`,
         field: 'unknown'
       }]
     };
+
+    // En desarrollo, podemos agregar más detalles
+    if (process.env.NODE_ENV === 'development') {
+      (errorResponse as any).debug = {
+        errorId,
+        originalError: exception.message,
+        stack: exception.stack,
+      };
+    }
 
     response.status(status).json(errorResponse);
   }

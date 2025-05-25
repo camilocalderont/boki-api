@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { ConversationState, ConversationStateDocument } from '../schemas/conversationState/conversationState.schema';
 import { CreateConversationStateDto } from '../dto/conversation/createConversationState.dto';
 import { UpdateConversationStateDto } from '../dto/conversation/updateConversationState.dto';
@@ -23,11 +23,14 @@ export class ConversationStateService extends BaseMongoDbCrudService<Conversatio
     }
   }
 
-  async findByContactId(contactId: string): Promise<ConversationStateDocument> {
-    return this.conversationStateModel.findOne({ contactId }).exec();
+  async findByContactId(contactId: string | Types.ObjectId): Promise<ConversationStateDocument> {
+    return this.conversationStateModel
+      .findOne({ contactId })
+      .sort({ createdAt: -1 })
+      .exec();
   }
 
-  async upsertState(contactId: string, flow: string, state: Record<string, any>): Promise<ConversationState> {
+  async upsertState(contactId: string | Types.ObjectId, flow: string, state: Record<string, any>): Promise<ConversationState> {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24);
 
@@ -40,7 +43,7 @@ export class ConversationStateService extends BaseMongoDbCrudService<Conversatio
       });
     } else {
       return this.create({
-        contactId,
+        contactId: contactId.toString(),
         flow,
         state,
         expiresAt
@@ -48,7 +51,7 @@ export class ConversationStateService extends BaseMongoDbCrudService<Conversatio
     }
   }
 
-  async clearState(contactId: string): Promise<void> {
+  async clearState(contactId: string | Types.ObjectId): Promise<void> {
     await this.conversationStateModel.deleteOne({ contactId }).exec();
   }
 }

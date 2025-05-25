@@ -33,15 +33,24 @@ import { SystemEvent, SystemEventSchema } from './schemas/systemEvent/systemEven
       provide: 'ContactService',
       useClass: ContactService
     },
-    ConversationStateService,
-    MessageHistoryService,
-    SystemEventService
+    {
+      provide: 'ConversationStateService',
+      useClass: ConversationStateService
+    },
+    {
+      provide: 'MessageHistoryService',
+      useClass: MessageHistoryService
+    },
+    {
+      provide: 'SystemEventService',
+      useClass: SystemEventService
+    }
   ],
   exports: [
     'ContactService',
-    ConversationStateService,
-    MessageHistoryService,
-    SystemEventService
+    'ConversationStateService',
+    'MessageHistoryService',
+    'SystemEventService'
   ],
 })
 export class ConversationModule {}

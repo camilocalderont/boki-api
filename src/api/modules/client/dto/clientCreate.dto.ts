@@ -1,10 +1,10 @@
 export class CreateClientDto {
   VcIdentificationNumber: string;
   VcPhone: string;
-  VcNickName: string;
+  VcNickName?: string;
   VcFirstName: string;
   VcSecondName?: string;
-  VcFirstLastName: string;
+  VcFirstLastName?: string;
   VcSecondLastName?: string;
-  VcEmail: string;
+  VcEmail?: string;
 }

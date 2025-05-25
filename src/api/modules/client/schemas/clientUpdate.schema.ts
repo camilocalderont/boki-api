@@ -6,10 +6,10 @@ export const updateClientSchema = Joi.object({
   .messages({
     'string.pattern.base': 'El número de teléfono debe tener el formato 57 seguido de 10 dígitos (ej: 573102222012)'
   }),
-  VcNickName: Joi.string().min(2).max(50),
+  VcNickName: Joi.string().min(2).max(50).optional,
   VcFirstName: Joi.string().min(2).max(50).required(),
-  VcSecondName: Joi.string().min(2).max(50).allow('', null),
-  VcFirstLastName: Joi.string().min(2).max(50).required(),
-  VcSecondLastName: Joi.string().min(2).max(50).allow('', null),
-  VcEmail: Joi.string().email().required()
+  VcSecondName: Joi.string().min(2).max(50).optional(),
+  VcFirstLastName: Joi.string().min(2).max(50).optional(),
+  VcSecondLastName: Joi.string().min(2).max(50).optional(),
+  VcEmail: Joi.string().email().optional()
 }).messages(joiMessagesES);

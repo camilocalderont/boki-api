@@ -1,15 +1,13 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Schema as MongooseSchema } from 'mongoose';
+import { Schema as MongooseSchema } from 'mongoose';
 import { HydratedDocument } from 'mongoose';
-import * as mongoose from 'mongoose';
-import { ContactDocument } from '../contact/contact.schema';
 
 export type ConversationStateDocument = HydratedDocument<ConversationState>;
 
 @Schema({ timestamps: true })
 export class ConversationState {
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Contact', required: true, index: true })
-  contactId: ContactDocument;
+  @Prop({ type: String, required: true, index: true })
+  contactId: string;
 
   @Prop({ type: String, required: true })
   flow: string;

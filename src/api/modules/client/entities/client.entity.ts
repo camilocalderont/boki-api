@@ -9,7 +9,7 @@ export class ClientEntity {
     @Column({ name: 'vc_identification_number', type: 'varchar', length: 50 })
     VcIdentificationNumber: string;
 
-    @Column({ name: 'vc_phone', type: 'varchar', length: 20, nullable: true })
+    @Column({ name: 'vc_phone', type: 'varchar', length: 20})
     VcPhone?: string;
 
     @Column({ name: 'vc_nick_name', type: 'varchar', length: 50, nullable: true })
@@ -21,13 +21,13 @@ export class ClientEntity {
     @Column({ name: 'vc_second_name', type: 'varchar', length: 50, nullable: true })
     VcSecondName?: string;
 
-    @Column({ name: 'vc_first_last_name', type: 'varchar', length: 50 })
+    @Column({ name: 'vc_first_last_name', type: 'varchar', length: 50, nullable: true })
     VcFirstLastName: string;
 
     @Column({ name: 'vc_second_last_name', type: 'varchar', length: 50, nullable: true })
     VcSecondLastName?: string;
 
-    @Column({ name: 'vc_email', type: 'varchar', length: 100, unique: true })
+    @Column({ name: 'vc_email', type: 'varchar', length: 100, unique: true, nullable: true })
     VcEmail: string;
 
     @CreateDateColumn({ name: 'created_at' })

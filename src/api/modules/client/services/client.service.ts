@@ -21,21 +21,33 @@ export class ClientService extends BaseCrudService<ClientEntity, CreateClientDto
     }
 
     protected async validateCreate(createClientDto: CreateClientDto): Promise<void> {
-        const existingClient = await this.clientRepository.findOne({
-            where: { VcEmail: createClientDto.VcEmail }
-        });
+        // const existingClient = await this.clientRepository.findOne({
+        //     where: { VcEmail: createClientDto.VcEmail }
+        // });
 
         const existingClientByIdentification = await this.clientRepository.findOne({
             where: { VcIdentificationNumber: createClientDto.VcIdentificationNumber }
         });
 
+        const existingClientByPhone = await this.clientRepository.findOne({
+            where: { VcPhone: createClientDto.VcPhone }
+        });
+
         const errors: ApiErrorItem[] = [];
 
-        if (existingClient) {
+        // if (existingClient) {
+        //     errors.push({
+        //         code: 'EMAIL_ALREADY_EXISTS',
+        //         message: 'There is already a customer with this email.',
+        //         field: 'VcEmail'
+        //     });
+        // }
+
+        if (existingClientByPhone) {
             errors.push({
-                code: 'EMAIL_ALREADY_EXISTS',
-                message: 'There is already a customer with this email.',
-                field: 'VcEmail'
+                code: 'PHONE_ALREADY_EXISTS',
+                message: 'There is already a customer with this phone number.',
+                field: 'VcPhone'
             });
         }
 

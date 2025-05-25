@@ -1,5 +1,5 @@
 import { MessageContentDto } from "./messageContent.dto";
-import { MessageDirection } from "../../schemas/messageHistory.schema";
+import { MessageDirection } from "../../schemas/messageHistory/messageHistory.schema";
 import { FlowContextDto } from "./flowContext.dto";
 
 export class MessageHistoryResponseDto {
