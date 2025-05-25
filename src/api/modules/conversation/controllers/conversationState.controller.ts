@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Inject, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Inject, NotFoundException, Delete } from '@nestjs/common';
 import { ConversationStateService } from '../services/conversationState.service';
 import { CreateConversationStateDto } from '../dto/conversation/createConversationState.dto';
 import { UpdateConversationStateDto } from '../dto/conversation/updateConversationState.dto';
@@ -18,6 +18,15 @@ export class ConversationStateController extends BaseMongoDbCrudController<Conve
         private readonly conversationStateService: ConversationStateService
     ) {
         super(conversationStateService, 'conversation-state', createConversationStateSchema, updateConversationStateSchema);
+    }
+
+    @Delete('contact/:contactId')
+    async deleteByContactId(@Param('contactId') contactId: string): Promise<ApiControllerResponse<void>> {
+        await this.conversationStateService.deleteByContactId(contactId);
+        return {
+            message: `Estados de conversación para el contacto ${contactId} eliminados exitosamente`,
+            data: undefined
+        };
     }
 
     @Get('contact/:contactId')

@@ -54,4 +54,8 @@ export class ConversationStateService extends BaseMongoDbCrudService<Conversatio
   async clearState(contactId: string | Types.ObjectId): Promise<void> {
     await this.conversationStateModel.deleteOne({ contactId }).exec();
   }
+
+  async deleteByContactId(contactId: string): Promise<void> {
+    await this.conversationStateModel.deleteMany({ contactId }).exec();
+  }
 }
