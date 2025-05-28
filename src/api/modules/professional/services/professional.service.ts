@@ -424,7 +424,7 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
     async findGeneralAvailability(professionalId: number, startDate?: Date): Promise<any[]> {
         try {
             const professional = await this.findOne(professionalId);
-            
+
             if (!professional) {
                 throw new NotFoundException([
                     {
@@ -434,9 +434,9 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
                     }
                 ], `No se encontró el profesional con ID: ${professionalId}`);
             }
-            
+
             const allAvailability = await this.professionalRepository.findGeneralAvailability(professionalId);
-            
+
             if (!allAvailability || allAvailability.length === 0) {
                 throw new NotFoundException([
                     {
@@ -446,14 +446,14 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
                     }
                 ], `No se encontraron horarios disponibles para el profesional con ID: ${professionalId}`);
             }
-            
+
             const availabilityByDay = new Map();
             for (const item of allAvailability) {
                 availabilityByDay.set(item.diaNumero, item);
             }
-            
+
             let baseDate;
-            
+
             if (startDate) {
                 if (!(startDate instanceof Date) || isNaN(startDate.getTime())) {
                     baseDate = new Date();
@@ -463,18 +463,18 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
             } else {
                 baseDate = new Date();
             }
-            
-            const dateString = baseDate.toISOString().split('T')[0]; 
+
+            const dateString = baseDate.toISOString().split('T')[0];
             const [year, month, day] = dateString.split('-').map(Number);
-            
+
             baseDate = new Date(year, month - 1, day);
-            
+
             const nextWorkingDays = [];
             const diasDeSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-            
+
             let exactDateDayOfWeek = baseDate.getDay();
             exactDateDayOfWeek = exactDateDayOfWeek === 0 ? 7 : exactDateDayOfWeek;
-            
+
             if (availabilityByDay.has(exactDateDayOfWeek)) {
                 const availability = { ...availabilityByDay.get(exactDateDayOfWeek) };
                 const formattedDate = this.formatDateToSpanish(baseDate);
@@ -482,31 +482,31 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
                 availability.fechaCompleta = new Date(baseDate);
                 nextWorkingDays.push(availability);
             }
-            
+
             let currentDate = new Date(baseDate);
             currentDate.setDate(currentDate.getDate() + 1);
-            
+
             while (nextWorkingDays.length < 5) {
                 let dayOfWeek = currentDate.getDay();
                 dayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek;
-                
+
                 if (availabilityByDay.has(dayOfWeek)) {
                     const availability = { ...availabilityByDay.get(dayOfWeek) };
                     const formattedDate = this.formatDateToSpanish(currentDate);
                     availability.fecha = formattedDate;
                     availability.fechaCompleta = new Date(currentDate);
-                    
+
                     nextWorkingDays.push(availability);
                 }
                 currentDate.setDate(currentDate.getDate() + 1);
             }
-            
+
             return nextWorkingDays;
         } catch (error) {
             if (error instanceof NotFoundException) {
                 throw error;
             }
-            
+
             throw new BadRequestException(
                 [{
                     code: 'ERROR_BUSQUEDA_DISPONIBILIDAD',
@@ -517,22 +517,22 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
             );
         }
     }
-    
+
     private formatDateToSpanish(date: Date): string {
         const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
         const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-        
+
         const dayName = days[date.getDay()];
         const day = date.getDate();
         const month = months[date.getMonth()];
-        
+
         return `${dayName} ${day} de ${month}`;
     }
 
     async findAvailableSlots(professionalId: number, serviceId: number, date: Date): Promise<any> {
         try {
             const professional = await this.findOne(professionalId);
-            
+
             if (!professional) {
                 throw new NotFoundException([
                     {
@@ -542,14 +542,14 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
                     }
                 ], `No se encontró el profesional con ID: ${professionalId}`);
             }
-            
+
             const professionalService = await this.professionalServiceRepository.findOne({
                 where: {
                     ProfessionalId: professionalId,
                     ServiceId: serviceId
                 }
             });
-            
+
             if (!professionalService) {
                 throw new NotFoundException([
                     {
@@ -559,18 +559,28 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
                     }
                 ], `El profesional no ofrece el servicio solicitado`);
             }
-            
-            const requestedDate = new Date(date);
+
+            let requestedDate;
+
+            if (date instanceof Date) {
+                const isoString = date.toISOString();
+                const [year, month, day] = isoString.split('T')[0].split('-').map(Number);
+                requestedDate = new Date(year, month - 1, day, 12, 0, 0);
+            } else {
+                const [year, month, day] = (date as string).split('-').map(Number);
+                requestedDate = new Date(year, month - 1, day, 12, 0, 0);
+            }
+
             let dayOfWeek = requestedDate.getDay();
             dayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek;
-            
+
             const businessHour = await this.professionalBussinessHourRepository.findOne({
                 where: {
                     ProfessionalId: professionalId,
                     IDayOfWeek: dayOfWeek
                 }
             });
-            
+
             if (!businessHour) {
                 return {
                     mañana: [],
@@ -579,51 +589,51 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
                     mensaje: "El profesional no trabaja en este día"
                 };
             }
-            
-            const startTimeStr = businessHour.TStartTime instanceof Date 
-                ? businessHour.TStartTime.toTimeString().substring(0, 5) 
+
+            const startTimeStr = businessHour.TStartTime instanceof Date
+                ? businessHour.TStartTime.toTimeString().substring(0, 5)
                 : String(businessHour.TStartTime).substring(0, 5);
-                
-            const endTimeStr = businessHour.TEndTime instanceof Date 
-                ? businessHour.TEndTime.toTimeString().substring(0, 5) 
+
+            const endTimeStr = businessHour.TEndTime instanceof Date
+                ? businessHour.TEndTime.toTimeString().substring(0, 5)
                 : String(businessHour.TEndTime).substring(0, 5);
-            
+
             const [startHour, startMinute] = startTimeStr.split(':').map(Number);
             const [endHour, endMinute] = endTimeStr.split(':').map(Number);
-            
+
             const startDate = new Date(requestedDate);
             startDate.setHours(startHour, startMinute, 0, 0);
-            
+
             const endDate = new Date(requestedDate);
             endDate.setHours(endHour, endMinute, 0, 0);
-            
+
             let breakStartDate = null;
             let breakEndDate = null;
-            
+
             if (businessHour.TBreakStartTime && businessHour.TBreakEndTime) {
-                const breakStartStr = businessHour.TBreakStartTime instanceof Date 
-                    ? businessHour.TBreakStartTime.toTimeString().substring(0, 5) 
+                const breakStartStr = businessHour.TBreakStartTime instanceof Date
+                    ? businessHour.TBreakStartTime.toTimeString().substring(0, 5)
                     : String(businessHour.TBreakStartTime).substring(0, 5);
-                    
-                const breakEndStr = businessHour.TBreakEndTime instanceof Date 
-                    ? businessHour.TBreakEndTime.toTimeString().substring(0, 5) 
+
+                const breakEndStr = businessHour.TBreakEndTime instanceof Date
+                    ? businessHour.TBreakEndTime.toTimeString().substring(0, 5)
                     : String(businessHour.TBreakEndTime).substring(0, 5);
-                
+
                 const [breakStartHour, breakStartMinute] = breakStartStr.split(':').map(Number);
                 const [breakEndHour, breakEndMinute] = breakEndStr.split(':').map(Number);
-                
+
                 breakStartDate = new Date(requestedDate);
                 breakStartDate.setHours(breakStartHour, breakStartMinute, 0, 0);
-                
+
                 breakEndDate = new Date(requestedDate);
                 breakEndDate.setHours(breakEndHour, breakEndMinute, 0, 0);
             }
-            
+
             const serviceEntity = await this.dataSource.getRepository('Service').findOne({
                 where: { Id: serviceId },
                 relations: ['ServiceStages']
             });
-            
+
             if (!serviceEntity || !serviceEntity.ServiceStages) {
                 throw new NotFoundException([
                     {
@@ -633,17 +643,17 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
                     }
                 ], `No se encontró el servicio`);
             }
-            
+
             const totalServiceDuration = serviceEntity.ServiceStages.reduce(
                 (total, stage) => total + stage.IDurationMinutes, 0
             );
-            
+
             const startOfDay = new Date(requestedDate);
             startOfDay.setHours(0, 0, 0, 0);
-            
+
             const endOfDay = new Date(requestedDate);
             endOfDay.setHours(23, 59, 59, 999);
-            
+
             const existingAppointments = await this.dataSource.getRepository('Appointment').find({
                 where: {
                     ProfessionalId: professionalId,
@@ -652,11 +662,11 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
                 },
                 order: { TStartTime: 'ASC' }
             });
-            
+
             const company = await this.dataSource.getRepository('Company').findOne({
                 where: { Id: serviceEntity.CompanyId }
             });
-            
+
             if (!company) {
                 throw new NotFoundException([
                     {
@@ -666,35 +676,35 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
                     }
                 ], `No se encontró la compañía`);
             }
-            
+
             const availableTimeSlots = [];
-            const slotDuration = company.IFrequencyScheduling || 10; 
-            
+            const slotDuration = company.IFrequencyScheduling || 10;
+
             let currentTime = new Date(startDate);
-            
+
             while (currentTime < endDate) {
                 const slotStartTime = new Date(currentTime);
                 const slotEndTime = new Date(currentTime);
                 slotEndTime.setMinutes(slotEndTime.getMinutes() + slotDuration);
-                
+
                 const serviceEndTime = new Date(slotStartTime);
                 serviceEndTime.setMinutes(serviceEndTime.getMinutes() + totalServiceDuration);
-                
+
                 let isInBreakTime = false;
                 if (breakStartDate && breakEndDate) {
                     isInBreakTime = slotStartTime >= breakStartDate && slotStartTime < breakEndDate;
                 }
-                
+
                 let overlapsWithAppointment = false;
                 for (const appointment of existingAppointments) {
                     const appointmentStartTime = new Date(requestedDate);
                     const [appHour, appMinute] = appointment.TStartTime.split(':').map(Number);
                     appointmentStartTime.setHours(appHour, appMinute, 0, 0);
-                    
+
                     const appointmentEndTime = new Date(requestedDate);
                     const [appEndHour, appEndMinute] = appointment.TEndTime.split(':').map(Number);
                     appointmentEndTime.setHours(appEndHour, appEndMinute, 0, 0);
-                    
+
                     if (
                         (slotStartTime >= appointmentStartTime && slotStartTime < appointmentEndTime) ||
                         (serviceEndTime > appointmentStartTime && serviceEndTime <= appointmentEndTime) ||
@@ -704,10 +714,10 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
                         break;
                     }
                 }
-                
+
                 if (
-                    serviceEndTime <= endDate && 
-                    !isInBreakTime && 
+                    serviceEndTime <= endDate &&
+                    !isInBreakTime &&
                     !overlapsWithAppointment
                 ) {
                     const timeSlot = {
@@ -717,22 +727,22 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
                     };
                     availableTimeSlots.push(timeSlot);
                 }
-                
+
                 currentTime.setMinutes(currentTime.getMinutes() + slotDuration);
             }
-            
+
             const morningSlots = availableTimeSlots
                 .filter(slot => slot.hour >= 6 && slot.hour < 12)
                 .map(slot => slot.time);
-            
+
             const afternoonSlots = availableTimeSlots
                 .filter(slot => slot.hour >= 12 && slot.hour < 18)
                 .map(slot => slot.time);
-            
+
             const eveningSlots = availableTimeSlots
                 .filter(slot => (slot.hour >= 18 && slot.hour <= 23) || (slot.hour >= 0 && slot.hour < 6))
                 .map(slot => slot.time);
-            
+
             return {
                 mañana: morningSlots,
                 tarde: afternoonSlots,
@@ -742,7 +752,7 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
             if (error instanceof NotFoundException) {
                 throw error;
             }
-            
+
             throw new BadRequestException(
                 [{
                     code: 'ERROR_BUSQUEDA_SLOTS',
@@ -753,15 +763,15 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
             );
         }
     }
-    
+
     private formatTime(date: Date): string {
         let hours = date.getHours();
         const minutes = date.getMinutes().toString().padStart(2, '0');
         const ampm = hours >= 12 ? 'PM' : 'AM';
-        
+
         hours = hours % 12;
         hours = hours ? hours : 12;
-        
+
         return `${hours}:${minutes} ${ampm}`;
     }
 }
