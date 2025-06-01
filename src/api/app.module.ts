@@ -17,6 +17,8 @@ import { AppointmentModule } from './modules/appointment/appointment.module';
 import { TagsModule } from './modules/tags/tags.module';
 import { FaqsModule } from './modules/faqs/faqs.module';
 import { ConversationModule } from './modules/conversation/conversation.module';
+import { LlmModule } from './modules/llm/llm.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -32,7 +34,8 @@ import { ConversationModule } from './modules/conversation/conversation.module';
     AppointmentModule,
     TagsModule,
     FaqsModule,
-    ConversationModule
+    ConversationModule,
+    LlmModule
   ],
   controllers: [],
   providers: [

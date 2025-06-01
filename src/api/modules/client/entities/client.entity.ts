@@ -1,10 +1,15 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { AppointmentEntity } from '../../appointment/entities/appointment.entity';
+import { CompanyEntity } from '../../company/entities/company.entity';
 
 @Entity('Client')
 export class ClientEntity {
     @PrimaryGeneratedColumn()
     Id: number;
+
+    @Index()
+    @Column({ name: 'company_id', type: 'int' })
+    CompanyId: number;
 
     @Column({ name: 'vc_identification_number', type: 'varchar', length: 50 })
     VcIdentificationNumber: string;
@@ -35,6 +40,10 @@ export class ClientEntity {
 
     @UpdateDateColumn({ name: 'updated_at' })
     updated_at: Date;
+
+    @ManyToOne(() => CompanyEntity, company => company.Clients)
+    @JoinColumn({ name: 'company_id' })
+    Company: CompanyEntity;
 
     @OneToMany(() => AppointmentEntity, appointment => appointment.Client)
     Appointments: AppointmentEntity[];

@@ -1,6 +1,10 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { ServiceEntity } from '../../service/entities/service.entity';
 import { CompanyBlockedTimeEntity } from './companyBlockedTime.entity';
+import { CategoryServiceEntity } from '../../categoryService/entities/categoryService.entity';
+import { ClientEntity } from '../../client/entities/client.entity';
+import { CompanyWhatsappSettingEntity } from '../../llm/entities/companyWhatsappSetting.entity';
+import { CompanyAgentEntity } from '../../llm/entities/companyAgent.entity';
 
 @Entity('Company')
 export class CompanyEntity {
@@ -42,6 +46,18 @@ export class CompanyEntity {
 
     @OneToMany(() => ServiceEntity, service => service.Company)
     Services: ServiceEntity[];
+
+    @OneToMany(() => CategoryServiceEntity, category => category.Company)
+    Categories: CategoryServiceEntity[];
+
+    @OneToMany(() => ClientEntity, client => client.Company)
+    Clients: ClientEntity[];
+
+    @OneToMany(() => CompanyWhatsappSettingEntity, companyWhatsappSetting => companyWhatsappSetting.Company)
+    CompanyWhatsappSettings: CompanyWhatsappSettingEntity[];
+
+    @OneToMany(() => CompanyAgentEntity, companyAgent => companyAgent.Company)
+    CompanyAgents: CompanyAgentEntity[];
 
     @OneToMany(() => CompanyBlockedTimeEntity, companyBlockedTime => companyBlockedTime.Company)
     CompanyBlockedTimes: CompanyBlockedTimeEntity[];
