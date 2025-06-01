@@ -20,10 +20,10 @@ export const runSeeds = async (dataSource: DataSource): Promise<void> => {
     // eslint-disable-next-line no-useless-catch
     try {
         await statesSeed(dataSource);
-        await categoryServiceSeed(dataSource);
         await tagsSeed(dataSource);
-        await clientSeed(dataSource);
         await companySeed(dataSource);
+        await categoryServiceSeed(dataSource);
+        await clientSeed(dataSource);
         await serviceSeed(dataSource);
         await companyBranchRoomSeed(dataSource);
         await companyBlockedTimeSeed(dataSource);

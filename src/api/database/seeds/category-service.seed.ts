@@ -12,13 +12,12 @@ export const categoryServiceSeed = async (dataSource: DataSource): Promise<void>
     }
 
     const categoriesData = [
-        // IDs explícitos si quieres controlar las FKs en otros seeders
-        { Id: 1, VcName: 'Manicure', BIsService: true },
-        { Id: 2, VcName: 'Pedicure', BIsService: true },
-        { Id: 3, VcName: 'Combos (otros)', BIsService: true },
-        { Id: 4, VcName: 'Pestañas y cejas', BIsService: true },
-        { Id: 5, VcName: 'General / Reservas', BIsService: false },
-        { Id: 6, VcName: 'Políticas / Pagos', BIsService: false },
+        { VcName: 'Manicure', BIsService: true, CompanyId: 1 },
+        { VcName: 'Pedicure', BIsService: true, CompanyId: 1 },
+        { VcName: 'Combos (otros)', BIsService: true, CompanyId: 1 },
+        { VcName: 'Pestañas y cejas', BIsService: true, CompanyId: 1 },
+        { VcName: 'General / Reservas', BIsService: false, CompanyId: 1 },
+        { VcName: 'Políticas / Pagos', BIsService: false, CompanyId: 1 },
     ];
 
     try {
