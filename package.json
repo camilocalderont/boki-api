@@ -1,5 +1,5 @@
 {
-  "name": "base-bailey-json",
+  "name": "boki-api",
   "version": "1.0.0",
   "description": "",
   "main": "dist/app.js",
@@ -64,5 +64,9 @@
     "typescript": "~5.5.0"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/camilocalderont/boki-api.git"
+  }
 }
