@@ -32,5 +32,15 @@ export class CompanyWhatsappSettingController extends BaseCrudController<Company
             data: data
         };
     }
+
+    @Get('llm/phone-number/:phoneNumberId')
+    @HttpCode(HttpStatus.OK)
+    async findByPhoneNumberId(@Param('phoneNumberId') phoneNumberId: string): Promise<ApiControllerResponse<CompanyWhatsappSettingEntity | null>> {
+        const data = await this.companyWhatsappSettingService.findByPhoneNumberId(phoneNumberId);
+        return {
+            message: 'Configuración de WhatsApp obtenida de forma exitosa',
+            data: data
+        };
+    }
 }
 

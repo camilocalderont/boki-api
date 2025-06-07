@@ -21,4 +21,19 @@ export class CompanyWhatsappSettingService extends BaseCrudService<CompanyWhatsa
             relations: ['Company']
         });
     }
+
+    async findByPhoneNumberId(phoneNumberId: string): Promise<CompanyWhatsappSettingEntity | null> {
+        return this.companyWhatsappSettingRepository.findOne({
+            where: { VcPhoneNumberId: phoneNumberId },
+            select: [
+                'CompanyId',
+                'VcPhoneNumberId',
+                'VcPhoneNumber',
+                'VcDisplayName',
+                'VcAccessToken',
+                'VcBotName',
+                'BIsActive'
+            ]
+        });
+    }
 }
