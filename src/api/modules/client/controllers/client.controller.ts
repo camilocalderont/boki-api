@@ -26,8 +26,14 @@ export class ClientController extends BaseCrudController<ClientEntity, CreateCli
   async clientByCellphone(@Param('cellphone') cellphone: string): Promise<ApiControllerResponse<ClientEntity>> {
     const data = await this.clientService.clientByCellphone(cellphone);
     return {
-      message: 'Client successfully obtained',
+      message: 'Cliente obtenido de forma exitosa',
       data: data
     };
+  }
+
+  @Get('llm/cellphone/:cellphone')
+  @HttpCode(HttpStatus.OK)
+  async clientByCellphoneForLLM(@Param('cellphone') cellphone: string): Promise<{ id: number; company: number; VcFirstName: string }> {
+    return await this.clientService.clientByCellphoneForLLM(cellphone);
   }
 }

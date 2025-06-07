@@ -43,4 +43,31 @@ export class CategoryServiceRepository implements ICrudRepository<CategoryServic
         }
         await this.categoryServiceRepository.remove(entity);
     }
+
+    async findByCompanyId(companyId: number): Promise<CategoryServiceEntity[]> {
+        try {
+            const categories = await this.categoryServiceRepository.find({ 
+                where: { CompanyId: companyId } 
+            });
+            return categories;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async findByCompanyIdForLLM(companyId: number): Promise<{ Id: number; VcName: string }[]> {
+        try {
+            const categories = await this.categoryServiceRepository.find({ 
+                where: { CompanyId: companyId },
+                select: ['Id', 'VcName']
+            });
+            
+            return categories.map(category => ({
+                Id: category.Id,
+                VcName: category.VcName
+            }));
+        } catch (error) {
+            throw error;
+        }
+    }
 }

@@ -1,16 +1,19 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CategoryServiceEntity } from '../entities/categoryService.entity';
 import { CreateCategoryServiceDto } from '../dto/categoryServiceCreate.dto';
 import { UpdateCategoryServiceDto } from '../dto/categoryServiceUpdate.dto';
 import { BaseCrudService } from '../../../shared/services/crud.services';
+import { CategoryServiceRepository } from '../repositories/categoryService.repository';
 
 @Injectable()
 export class CategoryServiceService extends BaseCrudService<CategoryServiceEntity, CreateCategoryServiceDto, UpdateCategoryServiceDto> {
     constructor(
         @InjectRepository(CategoryServiceEntity)
-        private readonly categoryServiceRepository: Repository<CategoryServiceEntity>
+        private readonly categoryServiceRepository: Repository<CategoryServiceEntity>,
+        @Inject(CategoryServiceRepository)
+        private readonly categoryServiceCustomRepository: CategoryServiceRepository
     ) {
         super(categoryServiceRepository);
     }
@@ -90,6 +93,54 @@ export class CategoryServiceService extends BaseCrudService<CategoryServiceEntit
                 throw error;
             }
             throw new BadRequestException('Error updating the service category');
+        }
+    }
+
+    async categoriesByCompanyId(companyId: number): Promise<CategoryServiceEntity[]> {
+        try {
+            const categories = await this.categoryServiceCustomRepository.findByCompanyId(companyId);
+
+            if (!categories || categories.length === 0) {
+                throw new ConflictException(
+                    [{
+                        code: 'NO_CATEGORIES_FOUND',
+                        message: `No se encontraron categorías para la empresa ID ${companyId}`,
+                        field: 'companyId'
+                    }],
+                    'No se encontraron categorías para esta empresa'
+                );
+            }
+
+            return categories;
+        } catch (error) {
+            if (error instanceof BadRequestException || error instanceof ConflictException) {
+                throw error;
+            }
+            throw new BadRequestException('Error buscando categorías por ID de empresa');
+        }
+    }
+
+    async categoriesByCompanyIdForLLM(companyId: number): Promise<{ Id: number; VcName: string }[]> {
+        try {
+            const categories = await this.categoryServiceCustomRepository.findByCompanyIdForLLM(companyId);
+
+            if (!categories || categories.length === 0) {
+                throw new ConflictException(
+                    [{
+                        code: 'NO_CATEGORIES_FOUND',
+                        message: `No se encontraron categorías para la empresa ID ${companyId}`,
+                        field: 'companyId'
+                    }],
+                    'No se encontraron categorías para esta empresa'
+                );
+            }
+
+            return categories;
+        } catch (error) {
+            if (error instanceof BadRequestException || error instanceof ConflictException) {
+                throw error;
+            }
+            throw new BadRequestException('Error buscando categorías por ID de empresa');
         }
     }
 }

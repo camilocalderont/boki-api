@@ -2,26 +2,23 @@
     "version": "0.2.0",
     "configurations": [
       {
-        "name": "Debug NestJS con tsx (watch)",
+        "name": "Debug NestJS",
         "type": "node",
         "request": "launch",
-        "args": ["${workspaceFolder}/src/app.ts"],
-        "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/tsx",
-        "runtimeArgs": ["--watch", "--inspect"],
+        "runtimeExecutable": "npm",
+        "runtimeArgs": ["run", "start:dev"],
         "console": "integratedTerminal",
         "internalConsoleOptions": "neverOpen",
         "sourceMaps": true,
-        "restart": true
-      },
-      {
-        "name": "Debug NestJS sin watch",
-        "type": "node",
-        "request": "launch",
-        "args": ["${workspaceFolder}/src/app.ts"],
-        "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/tsx",
-        "console": "integratedTerminal",
-        "internalConsoleOptions": "neverOpen",
-        "sourceMaps": true
+        "restart": true,
+        "skipFiles": ["<node_internals>/**"],
+        "env": {
+          "NODE_ENV": "development",
+          "NODE_OPTIONS": "--inspect"
+        },
+        "outputCapture": "std",
+        "cwd": "${workspaceFolder}",
+        "autoAttachChildProcesses": true
       }
     ]
   }

@@ -20,14 +20,22 @@ export class ContactController extends BaseMongoDbCrudController<ContactDocument
   }
 
   @Get('phone/:phone')
-  async findByPhone(@Param('phone') phone: string): Promise<ApiControllerResponse<Contact>> {
+  async findByPhone(@Param('phone') phone: string): Promise<ApiControllerResponse<any>> {
     const contact = await this.contactService.findByPhone(phone);
     if (!contact) {
       throw new NotFoundException(`Contact with phone ${phone} not found`);
     }
+
+    // Filtrar los datos para retornar solo los campos específicos
+    const contactObj = contact.toObject ? contact.toObject() : contact;
+    const filteredData = {
+      phone: contactObj.phone,
+      lastInteraction: contactObj.lastInteraction
+    };
+
     return {
       message: 'Contact retrieved successfully',
-      data: contact
+      data: filteredData
     };
   }
 }

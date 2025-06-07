@@ -4,7 +4,7 @@ import { HydratedDocument } from 'mongoose';
 
 export type ConversationStateDocument = HydratedDocument<ConversationState>;
 
-@Schema({ timestamps: true })
+@Schema({ timestamps: true, versionKey: false })
 export class ConversationState {
   @Prop({ type: String, required: true, index: true })
   contactId: string;
@@ -12,13 +12,11 @@ export class ConversationState {
   @Prop({ type: String, required: true })
   flow: string;
 
-  @Prop({ type: MongooseSchema.Types.Mixed, required: true })
-  state: Record<string, any>;
+  @Prop({ type: String, required: true })
+  step: string;
 
-  @Prop({ type: Date, index: true })
-  expiresAt: Date;
+  @Prop({ type: MongooseSchema.Types.Mixed, default: {} })
+  data: Record<string, any>;
 }
 
-export const ConversationStateSchema = SchemaFactory.createForClass(ConversationState);
-ConversationStateSchema.index({ contactId: 1 });
-ConversationStateSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 }); 
+export const ConversationStateSchema = SchemaFactory.createForClass(ConversationState); 

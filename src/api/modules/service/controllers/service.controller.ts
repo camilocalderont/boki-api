@@ -90,6 +90,18 @@ export class ServiceController extends BaseCrudController<ServiceEntity, CreateS
         return this.serviceService.findByCategory(id);
     }
 
+    @Get('llm/category/:id')
+    @HttpCode(HttpStatus.OK)
+    async findByCategoryForLLM(@Param('id', ParseIntPipe) id: number): Promise<{ Id: number; VcName: string; VcDescription: string; IRegularPrice: number; VcTime: string }[]> {
+        return await this.serviceService.findByCategoryForLLM(id);
+    }
+
+    @Get('llm/company/:id')
+    @HttpCode(HttpStatus.OK)
+    async findByCompanyForLLM(@Param('id', ParseIntPipe) id: number): Promise<{ Id: number; VcName: string; VcDescription: string; IRegularPrice: number; VcTime: string; Category: string }[]> {
+        return await this.serviceService.findByCompanyForLLM(id);
+    }
+
     @Put(':id')
     @HttpCode(HttpStatus.OK)
     @UseInterceptors(FileInterceptor('picture'))

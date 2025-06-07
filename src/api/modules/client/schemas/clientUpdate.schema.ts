@@ -1,6 +1,7 @@
 import * as Joi from 'joi';
 import { joiMessagesES } from '../../../shared/utils/joi-messages';
 export const updateClientSchema = Joi.object({
+  CompanyId: Joi.number().required(),
   VcIdentificationNumber: Joi.string().min(5).max(50).required(),
   VcPhone: Joi.string().pattern(/^57\d{10}$/).required()
   .messages({

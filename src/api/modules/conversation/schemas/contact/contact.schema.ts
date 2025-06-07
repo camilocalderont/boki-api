@@ -4,20 +4,14 @@ import { HydratedDocument } from 'mongoose';
 
 export type ContactDocument = HydratedDocument<Contact>;
 
-@Schema({ timestamps: true })
+@Schema({ timestamps: true, versionKey: false })
 export class Contact {
-  @Prop({ type: String, required: true, unique: true, index: true })
+  @Prop({ type: String, required: true })
   phone: string;
-
-  @Prop({ type: Number, ref: 'Client' })
-  clientId: number;
 
   @Prop({ type: Date, default: Date.now })
   lastInteraction: Date;
-
-  @Prop({ type: MongooseSchema.Types.Mixed })
-  metadata: Record<string, any>;
 }
 
 export const ContactSchema = SchemaFactory.createForClass(Contact);
-ContactSchema.index({ phone: 1 });
+ContactSchema.index({ phone: 1 }, { unique: true });

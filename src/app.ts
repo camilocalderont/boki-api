@@ -1,12 +1,8 @@
 import 'reflect-metadata';
 import bootstrapApi from './api/main';
-import bootstrapBot from './bot/main';
 
 async function main() {
   try {
-    // Iniciar el bot
-    // await bootstrapBot();
-
     // Iniciar el API
     await bootstrapApi();
   } catch (error) {

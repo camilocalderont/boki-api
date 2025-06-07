@@ -18,7 +18,9 @@ export abstract class BaseMongoDbCrudService<T extends Document, CreateDto = any
 
       await this.afterCreate(savedEntity);
 
-      return savedEntity;
+      // Obtener documento limpio con lean()
+      const doc = await this.repository.findById(savedEntity._id).lean().exec();
+      return this.transformMongoDocument(doc);
     } catch (error) {
       console.error(`Error in create:`, error);
       
@@ -30,17 +32,14 @@ export abstract class BaseMongoDbCrudService<T extends Document, CreateDto = any
     }
   }
 
-  protected async validateCreate(createDto: CreateDto): Promise<void> {
-    // Método a sobrescribir en las clases hijas
-  }
-
   protected async afterCreate(entity: T): Promise<void> {
     // Método a sobrescribir en las clases hijas
   }
 
   async findAll(filters?: Record<string, any>): Promise<T[]> {
     try {
-      return await this.repository.find(filters || {}).exec();
+      const results = await this.repository.find(filters || {}).lean().exec();
+      return results.map(doc => this.transformMongoDocument(doc));
     } catch (error) {
       console.error(`Error in findAll:`, error);
       throw error;
@@ -63,12 +62,15 @@ export abstract class BaseMongoDbCrudService<T extends Document, CreateDto = any
           .sort(sort)
           .skip(skip)
           .limit(limit)
+          .lean()
           .exec(),
         this.repository.countDocuments(filters || {}).exec()
       ]);
 
+      const transformedItems = items.map(item => this.transformMongoDocument(item));
+
       return {
-        items,
+        items: transformedItems,
         meta: {
           totalItems,
           itemCount: items.length,
@@ -85,11 +87,16 @@ export abstract class BaseMongoDbCrudService<T extends Document, CreateDto = any
 
   async findOne(id: string): Promise<T> {
     try {
-      const entity = await this.repository.findById(id).exec();
+      // Validar si el ID es un ObjectId válido
+      if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+        throw new NotFoundException(`El ID "${id}" no es válido. Debe ser un ID de 24 caracteres hexadecimales`);
+      }
+
+      const entity = await this.repository.findById(id).lean().exec();
       if (!entity) {
         throw new NotFoundException(`Entidad con ID ${id} no encontrada`);
       }
-      return entity;
+      return this.transformMongoDocument(entity);
     } catch (error) {
       console.error(`Error in findOne:`, error);
       throw error;
@@ -98,17 +105,22 @@ export abstract class BaseMongoDbCrudService<T extends Document, CreateDto = any
 
   async update(id: string, updateDto: UpdateDto): Promise<T> {
     try {
+      // Validar si el ID es un ObjectId válido
+      if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+        throw new NotFoundException(`El ID "${id}" no es válido. Debe ser un ID de 24 caracteres hexadecimales`);
+      }
+
       await this.validateUpdate(id, updateDto);
 
       const entity = await this.findOne(id);
       const preparedData = await this.prepareUpdateData(entity, updateDto);
 
-      Object.assign(entity, preparedData);
-      const updatedEntity = await entity.save();
+      await this.repository.findByIdAndUpdate(id, preparedData).exec();
+      await this.afterUpdate(await this.repository.findById(id).exec());
 
-      await this.afterUpdate(updatedEntity);
-
-      return updatedEntity;
+      // Obtener documento actualizado limpio
+      const updated = await this.repository.findById(id).lean().exec();
+      return this.transformMongoDocument(updated);
     } catch (error) {
       console.error(`Error in update:`, error);
       throw error;
@@ -116,6 +128,10 @@ export abstract class BaseMongoDbCrudService<T extends Document, CreateDto = any
   }
 
   protected async validateUpdate(id: string, updateDto: UpdateDto): Promise<void> {
+    // Método a sobrescribir en las clases hijas
+  }
+
+  protected async validateCreate(createDto: CreateDto): Promise<void> {
     // Método a sobrescribir en las clases hijas
   }
 
@@ -129,6 +145,11 @@ export abstract class BaseMongoDbCrudService<T extends Document, CreateDto = any
 
   async remove(id: string): Promise<void> {
     try {
+      // Validar si el ID es un ObjectId válido
+      if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+        throw new NotFoundException(`El ID "${id}" no es válido. Debe ser un ID de 24 caracteres hexadecimales`);
+      }
+
       const result = await this.repository.findByIdAndDelete(id).exec();
       if (!result) {
         throw new NotFoundException(`Entidad con ID ${id} no encontrada`);
@@ -137,5 +158,32 @@ export abstract class BaseMongoDbCrudService<T extends Document, CreateDto = any
       console.error(`Error in remove:`, error);
       throw error;
     }
+  }
+
+  // Método para transformar documentos MongoDB a objetos limpios
+  public transformMongoDocument(doc: any): any {
+    if (!doc) return null;
+    
+    const transformed = { ...doc };
+    
+    // Convertir ObjectId a string
+    if (transformed._id) {
+      transformed._id = transformed._id.toString();
+    }
+    
+    // Convertir fechas a formato ISO
+    if (transformed.lastInteraction && transformed.lastInteraction instanceof Date) {
+      transformed.lastInteraction = transformed.lastInteraction.toISOString();
+    }
+    
+    if (transformed.createdAt && transformed.createdAt instanceof Date) {
+      transformed.createdAt = transformed.createdAt.toISOString();
+    }
+    
+    if (transformed.updatedAt && transformed.updatedAt instanceof Date) {
+      transformed.updatedAt = transformed.updatedAt.toISOString();
+    }
+    
+    return transformed;
   }
 }

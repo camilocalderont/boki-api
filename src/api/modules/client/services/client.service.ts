@@ -5,6 +5,7 @@ import { ClientEntity } from '../entities/client.entity';
 import { CreateClientDto } from '../dto/clientCreate.dto';
 import { ClientRepository } from '../repositories/client.repository';
 import { UpdateClientDto } from '../dto/clientUpdate.dto';
+import { CompanyEntity } from '../../company/entities/company.entity';
 import * as bcrypt from 'bcrypt';
 import { BaseCrudService } from '../../../shared/services/crud.services';
 import { ApiErrorItem } from '~/api/shared/interfaces/api-response.interface';
@@ -14,6 +15,8 @@ export class ClientService extends BaseCrudService<ClientEntity, CreateClientDto
     constructor(
         @InjectRepository(ClientEntity)
         private readonly clientRepository: Repository<ClientEntity>,
+        @InjectRepository(CompanyEntity)
+        private readonly companyRepository: Repository<CompanyEntity>,
         @Inject(ClientRepository)
         private readonly clientCustomRepository: ClientRepository
     ) {
@@ -21,6 +24,11 @@ export class ClientService extends BaseCrudService<ClientEntity, CreateClientDto
     }
 
     protected async validateCreate(createClientDto: CreateClientDto): Promise<void> {
+        // Validar que la compañía existe
+        const existingCompany = await this.companyRepository.findOne({
+            where: { Id: createClientDto.CompanyId }
+        });
+
         // const existingClient = await this.clientRepository.findOne({
         //     where: { VcEmail: createClientDto.VcEmail }
         // });
@@ -35,6 +43,14 @@ export class ClientService extends BaseCrudService<ClientEntity, CreateClientDto
 
         const errors: ApiErrorItem[] = [];
 
+        if (!existingCompany) {
+            errors.push({
+                code: 'COMPANY_DOES_NOT_EXIST',
+                message: 'No existe una compañía con el ID proporcionado.',
+                field: 'CompanyId'
+            });
+        }
+
         // if (existingClient) {
         //     errors.push({
         //         code: 'EMAIL_ALREADY_EXISTS',
@@ -46,7 +62,7 @@ export class ClientService extends BaseCrudService<ClientEntity, CreateClientDto
         if (existingClientByPhone) {
             errors.push({
                 code: 'PHONE_ALREADY_EXISTS',
-                message: 'There is already a customer with this phone number.',
+                message: 'Ya existe un cliente con este número de teléfono.',
                 field: 'VcPhone'
             });
         }
@@ -54,13 +70,13 @@ export class ClientService extends BaseCrudService<ClientEntity, CreateClientDto
         if (existingClientByIdentification) {
             errors.push({
                 code: 'IDENTIFICATION_NUMBER_ALREADY_EXISTS',
-                message: 'There is already a customer with this identification number.',
+                message: 'Ya existe un cliente con este número de identificación.',
                 field: 'VcIdentificationNumber'
             });
         }
 
         if (errors.length > 0) {
-            throw new ConflictException(errors, "There is already a customer with these data");
+            throw new ConflictException(errors, "Ya existe un cliente con estos datos o la compañía no existe");
         }
     }
 
@@ -83,38 +99,53 @@ export class ClientService extends BaseCrudService<ClientEntity, CreateClientDto
                 throw new ConflictException(
                     [{
                         code: '23505',
-                        message: 'There is already a customer with these data',
+                        message: 'Ya existe un cliente con estos datos',
                         field: 'client'
                     }],
-                    'There is already a customer with these data'
+                    'Ya existe un cliente con estos datos'
                 );
             }
 
-            throw new BadRequestException('An unexpected error occurred', error);
+            throw new BadRequestException('Ocurrió un error inesperado', error);
         }
     }
 
     protected async validateUpdate(id: number, updateClientDto: UpdateClientDto): Promise<void> {
         const client = await this.findOne(id);
 
+        const errors: ApiErrorItem[] = [];
+
+        // Validar que la compañía existe si se proporciona CompanyId
+        if (updateClientDto.CompanyId && updateClientDto.CompanyId !== client.CompanyId) {
+            const existingCompany = await this.companyRepository.findOne({
+                where: { Id: updateClientDto.CompanyId }
+            });
+
+            if (!existingCompany) {
+                errors.push({
+                    code: 'COMPANY_DOES_NOT_EXIST',
+                    message: 'No existe una compañía con el ID proporcionado.',
+                    field: 'CompanyId'
+                });
+            }
+        }
+
         if (updateClientDto.VcEmail && updateClientDto.VcEmail !== client.VcEmail) {
             const existingClient = await this.clientRepository.findOne({
                 where: { VcEmail: updateClientDto.VcEmail }
             });
 
-            const errors: ApiErrorItem[] = [];
-
             if (existingClient) {
                 errors.push({
                     code: 'EMAIL_ALREADY_EXISTS',
-                    message: 'There is already a customer with this email.',
+                    message: 'Ya existe un cliente con este email.',
                     field: 'VcEmail'
                 });
             }
+        }
 
-            if (errors.length > 0) {
-                throw new ConflictException(errors, "There is already a customer with these data");
-            }
+        if (errors.length > 0) {
+            throw new ConflictException(errors, "Ya existe un cliente con estos datos o la compañía no existe");
         }
     }
 
@@ -130,14 +161,14 @@ export class ClientService extends BaseCrudService<ClientEntity, CreateClientDto
                 throw new ConflictException(
                     [{
                         code: '23505',
-                        message: 'There is already a customer with these data',
+                        message: 'Ya existe un cliente con estos datos',
                         field: 'client'
                     }],
-                    'There is already a customer with these data'
+                    'Ya existe un cliente con estos datos'
                 );
             }
 
-            throw new BadRequestException('An unexpected error occurred', error);
+            throw new BadRequestException('Ocurrió un error inesperado', error);
         }
     }
 
@@ -162,6 +193,30 @@ export class ClientService extends BaseCrudService<ClientEntity, CreateClientDto
                 throw error;
             }
             throw new BadRequestException('Error searching for a client by phone');
+        }
+    }
+
+    async clientByCellphoneForLLM(cellphone: string): Promise<{ id: number; company: number; VcFirstName: string }> {
+        try {
+            const client = await this.clientCustomRepository.findByPhoneForLLM(cellphone);
+
+            if (!client) {
+                throw new ConflictException(
+                    [{
+                        code: 'NUMBER_DOES_NOT_EXIST',
+                        message: `No se encontró cliente con el número de teléfono ${cellphone}`,
+                        field: 'cellphone'
+                    }],
+                    'No se encontró cliente con el número de teléfono'
+                );
+            }
+
+            return client;
+        } catch (error) {
+            if (error instanceof BadRequestException || error instanceof ConflictException) {
+                throw error;
+            }
+            throw new BadRequestException('Error buscando cliente por teléfono');
         }
     }
 }

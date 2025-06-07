@@ -8,6 +8,7 @@ import { UpdateServiceDto } from '../dto/serviceUpdate.dto';
 import { BaseCrudService } from '../../../shared/services/crud.services';
 import { ApiErrorItem } from '~/api/shared/interfaces/api-response.interface';
 import { ServiceStageService } from './serviceStage.service';
+import { ServiceRepository } from '../repositories/service.repository';
 
 @Injectable()
 export class ServiceService extends BaseCrudService<ServiceEntity, CreateServiceDto, UpdateServiceDto> {
@@ -17,7 +18,9 @@ export class ServiceService extends BaseCrudService<ServiceEntity, CreateService
         @InjectDataSource()
         private readonly dataSource: DataSource,
         @Inject(ServiceStageService)
-        private readonly serviceStageService: ServiceStageService
+        private readonly serviceStageService: ServiceStageService,
+        @Inject(ServiceRepository)
+        private readonly serviceCustomRepository: ServiceRepository
     ) {
         super(serviceRepository);
     }
@@ -275,5 +278,53 @@ export class ServiceService extends BaseCrudService<ServiceEntity, CreateService
             where: { CategoryId: categoryId },
             relations: ['Company']
         });
+    }
+
+    async findByCategoryForLLM(categoryId: number): Promise<{ Id: number; VcName: string; VcDescription: string; IRegularPrice: number; VcTime: string }[]> {
+        try {
+            const services = await this.serviceCustomRepository.findByCategoryIdForLLM(categoryId);
+
+            if (!services || services.length === 0) {
+                throw new ConflictException(
+                    [{
+                        code: 'NO_SERVICES_FOUND',
+                        message: `No se encontraron servicios para la categoría ID ${categoryId}`,
+                        field: 'categoryId'
+                    }],
+                    'No se encontraron servicios para esta categoría'
+                );
+            }
+
+            return services;
+        } catch (error) {
+            if (error instanceof BadRequestException || error instanceof ConflictException) {
+                throw error;
+            }
+            throw new BadRequestException('Error buscando servicios por ID de categoría');
+        }
+    }
+
+    async findByCompanyForLLM(companyId: number): Promise<{ Id: number; VcName: string; VcDescription: string; IRegularPrice: number; VcTime: string; Category: string }[]> {
+        try {
+            const services = await this.serviceCustomRepository.findByCompanyIdForLLM(companyId);
+
+            if (!services || services.length === 0) {
+                throw new ConflictException(
+                    [{
+                        code: 'NO_SERVICES_FOUND',
+                        message: `No se encontraron servicios para la compañía ID ${companyId}`,
+                        field: 'companyId'
+                    }],
+                    'No se encontraron servicios para esta compañía'
+                );
+            }
+
+            return services;
+        } catch (error) {
+            if (error instanceof BadRequestException || error instanceof ConflictException) {
+                throw error;
+            }
+            throw new BadRequestException('Error buscando servicios por ID de compañía');
+        }
     }
 }

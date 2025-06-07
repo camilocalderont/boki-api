@@ -14,4 +14,11 @@ export class CompanyWhatsappSettingService extends BaseCrudService<CompanyWhatsa
     ) {
         super(companyWhatsappSettingRepository);
     }
+
+    async findByCompany(companyId: number): Promise<CompanyWhatsappSettingEntity[]> {
+        return this.companyWhatsappSettingRepository.find({
+            where: { CompanyId: companyId },
+            relations: ['Company']
+        });
+    }
 }

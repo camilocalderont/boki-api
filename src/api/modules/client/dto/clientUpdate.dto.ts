@@ -1,4 +1,5 @@
 export class UpdateClientDto {
+  CompanyId?: number;
   VcIdentificationNumber?: string;
   VcPhone?: string;
   VcNickName?: string;

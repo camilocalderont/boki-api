@@ -195,6 +195,64 @@ export class ProfessionalController extends BaseCrudController<ProfessionalEntit
     };
   }
 
+  @Get('llm/service/:serviceId')
+  @HttpCode(HttpStatus.OK)
+  async findByServiceIdForLLM(@Param('serviceId', ParseIntPipe) serviceId: number, @Query('startDate') startDate?: string): Promise<{ Id: number; VcName: string; VcProfession: string; VcSpecialization: string; Disponibilidad: any[] }[]> {
+    if (isNaN(serviceId) || serviceId <= 0) {
+      throw new BadRequestException(`ID de servicio inválido: ${serviceId}. El ID debe ser un número positivo.`);
+    }
+    
+    let parsedDate;
+    
+    if (startDate) {
+      try {
+        if (startDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          const [year, month, day] = startDate.split('-').map(Number);
+          parsedDate = new Date(year, month - 1, day);
+        } else {
+          parsedDate = new Date(startDate);
+        }
+        
+        if (isNaN(parsedDate.getTime())) {
+          throw new BadRequestException(`La fecha proporcionada no es válida: ${startDate}`);
+        }
+      } catch (error) {
+        throw new BadRequestException(`Error al procesar la fecha: ${startDate}`);
+      }
+    }
+    
+    return await this.professionalService.findByServiceIdForLLM(serviceId, parsedDate);
+  }
+
+  @Get('llm/company/:companyId')
+  @HttpCode(HttpStatus.OK)
+  async findByCompanyIdForLLM(@Param('companyId', ParseIntPipe) companyId: number, @Query('startDate') startDate?: string): Promise<{ Id: number; VcName: string; VcProfession: string; VcSpecialization: string; Service: string[]; ServiceId: number[]; Disponibilidad: any[] }[]> {
+    if (isNaN(companyId) || companyId <= 0) {
+      throw new BadRequestException(`ID de compañía inválido: ${companyId}. El ID debe ser un número positivo.`);
+    }
+    
+    let parsedDate;
+    
+    if (startDate) {
+      try {
+        if (startDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          const [year, month, day] = startDate.split('-').map(Number);
+          parsedDate = new Date(year, month - 1, day);
+        } else {
+          parsedDate = new Date(startDate);
+        }
+        
+        if (isNaN(parsedDate.getTime())) {
+          throw new BadRequestException(`La fecha proporcionada no es válida: ${startDate}`);
+        }
+      } catch (error) {
+        throw new BadRequestException(`Error al procesar la fecha: ${startDate}`);
+      }
+    }
+    
+    return await this.professionalService.findByCompanyIdForLLM(companyId, parsedDate);
+  }
+
   @Get(':professionalId/general-availability')
   async getGeneralAvailability(@Param('professionalId', ParseIntPipe) professionalId: number, @Query('startDate') startDate?: string): Promise<ApiControllerResponse<any[]>> {
     if (isNaN(professionalId) || professionalId <= 0) {

@@ -20,4 +20,25 @@ export class ClientRepository {
       throw error;
     }
   }
+
+  async findByPhoneForLLM(phone: string): Promise<{ id: number; company: number; VcFirstName: string } | null> {
+    try {
+      const client = await this.clientRepository.findOne({ 
+        where: { VcPhone: phone },
+        select: ['Id', 'CompanyId', 'VcFirstName']
+      });
+      
+      if (!client) {
+        return null;
+      }
+
+      return {
+        id: client.Id,
+        company: client.CompanyId,
+        VcFirstName: client.VcFirstName
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
 }

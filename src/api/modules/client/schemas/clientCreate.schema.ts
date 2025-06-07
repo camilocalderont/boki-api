@@ -2,6 +2,7 @@ import * as Joi from 'joi';
 import { joiMessagesES } from '../../../shared/utils/joi-messages';
 
 export const createClientSchema = Joi.object({
+  CompanyId: Joi.number().required(),
   VcIdentificationNumber: Joi.string().min(5).max(50).pattern(/^\d+$/).required()
     .messages({
       'string.pattern.base': 'El número de identificación debe contener solo dígitos'
@@ -15,5 +16,5 @@ export const createClientSchema = Joi.object({
   VcSecondName: Joi.string().min(2).max(50).optional(),
   VcFirstLastName: Joi.string().min(2).max(50).optional(),
   VcSecondLastName: Joi.string().min(2).max(50).optional(),
-  VcEmail: Joi.string().email().optional()
+  VcEmail: Joi.string().email().optional(),
 }).messages(joiMessagesES);

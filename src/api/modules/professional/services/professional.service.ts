@@ -774,4 +774,141 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
 
         return `${hours}:${minutes} ${ampm}`;
     }
+
+    async findByServiceIdForLLM(serviceId: number, startDate?: Date): Promise<{ Id: number; VcName: string; VcProfession: string; VcSpecialization: string; Disponibilidad: any[] }[]> {
+        try {
+            const professionals = await this.findByServiceId(serviceId);
+            const result = [];
+
+            for (const professional of professionals) {
+                const fullName = `${professional.VcFirstName}${professional.VcSecondName ? ' ' + professional.VcSecondName : ''} ${professional.VcFirstLastName}${professional.VcSecondLastName ? ' ' + professional.VcSecondLastName : ''}`;
+                const generalAvailability = await this.findGeneralAvailability(professional.Id, startDate);
+                
+                const availability = [];
+
+                for (const dayAvailability of generalAvailability) {
+                    if (availability.length >= 5) break;
+                    const dia = dayAvailability.fecha;
+                    const fechaCompleta = dayAvailability.fechaCompleta;
+                    const slots = await this.findAvailableSlots(professional.Id, serviceId, fechaCompleta);
+                    const allHours = [
+                        ...(slots.mañana || []),
+                        ...(slots.tarde || []),
+                        ...(slots.noche || [])
+                    ]; 
+
+                    if (allHours.length > 0) {
+                        availability.push({
+                            dia: dia,
+                            date: fechaCompleta,
+                            horas: allHours
+                        });
+                    }
+                }
+
+                result.push({
+                    Id: professional.Id,
+                    VcName: fullName,
+                    VcProfession: professional.VcProfession,
+                    VcSpecialization: professional.VcSpecialization || '',
+                    Disponibilidad: availability
+                });
+            }
+
+            return result;
+        } catch (error) {
+            console.error('Error en findByServiceIdForLLM:', error);
+            console.error('Error stack:', error.stack);
+            
+            if (error instanceof NotFoundException || error instanceof BadRequestException) {
+                throw error;
+            }
+            throw new BadRequestException(`Error obteniendo profesionales con disponibilidad para LLM: ${error.message}`);
+        }
+    }
+
+    async findByCompanyIdForLLM(companyId: number, startDate?: Date): Promise<{ Id: number; VcName: string; VcProfession: string; VcSpecialization: string; Service: string[]; ServiceId: number[]; Disponibilidad: any[] }[]> {
+        try {
+            // Buscar profesionales que trabajan para una compañía específica
+            const professionals = await this.professionalTypeOrmRepo
+                .createQueryBuilder('professional')
+                .innerJoinAndSelect('professional.Services', 'professionalService')
+                .innerJoinAndSelect('professionalService.Service', 'service')
+                .where('service.CompanyId = :companyId', { companyId })
+                .getMany();
+
+            if (!professionals || professionals.length === 0) {
+                throw new NotFoundException([
+                    {
+                        code: 'NO_PROFESSIONALS_FOUND',
+                        message: `No se encontraron profesionales para la compañía ID ${companyId}`,
+                        field: 'companyId'
+                    }
+                ], 'No se encontraron profesionales para esta compañía');
+            }
+
+            const result = [];
+
+            for (const professional of professionals) {
+                const fullName = `${professional.VcFirstName}${professional.VcSecondName ? ' ' + professional.VcSecondName : ''} ${professional.VcFirstLastName}${professional.VcSecondLastName ? ' ' + professional.VcSecondLastName : ''}`;
+                
+                // Obtener servicios del profesional para esta compañía
+                const services = professional.Services
+                    .filter(ps => ps.Service.CompanyId === companyId)
+                    .map(ps => ps.Service);
+                
+                const serviceNames = services.map(service => service.VcName);
+                const serviceIds = services.map(service => service.Id);
+
+                const generalAvailability = await this.findGeneralAvailability(professional.Id, startDate);
+                
+                const availability = [];
+
+                for (const dayAvailability of generalAvailability) {
+                    if (availability.length >= 5) break;
+                    const dia = dayAvailability.fecha;
+                    const fechaCompleta = dayAvailability.fechaCompleta;
+                    
+                    // Para obtener disponibilidad general, usamos el primer servicio como referencia
+                    let allHours = [];
+                    if (services.length > 0) {
+                        const slots = await this.findAvailableSlots(professional.Id, services[0].Id, fechaCompleta);
+                        allHours = [
+                            ...(slots.mañana || []),
+                            ...(slots.tarde || []),
+                            ...(slots.noche || [])
+                        ];
+                    }
+
+                    if (allHours.length > 0) {
+                        availability.push({
+                            dia: dia,
+                            date: fechaCompleta,
+                            horas: allHours
+                        });
+                    }
+                }
+
+                result.push({
+                    Id: professional.Id,
+                    VcName: fullName,
+                    VcProfession: professional.VcProfession,
+                    VcSpecialization: professional.VcSpecialization || '',
+                    Service: serviceNames,
+                    ServiceId: serviceIds,
+                    Disponibilidad: availability
+                });
+            }
+
+            return result;
+        } catch (error) {
+            console.error('Error en findByCompanyIdForLLM:', error);
+            console.error('Error stack:', error.stack);
+            
+            if (error instanceof NotFoundException || error instanceof BadRequestException) {
+                throw error;
+            }
+            throw new BadRequestException(`Error obteniendo profesionales con disponibilidad para LLM por compañía: ${error.message}`);
+        }
+    }
 }

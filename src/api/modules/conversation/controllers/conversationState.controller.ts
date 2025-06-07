@@ -20,32 +20,40 @@ export class ConversationStateController extends BaseMongoDbCrudController<Conve
         super(conversationStateService, 'conversation-state', createConversationStateSchema, updateConversationStateSchema);
     }
 
+    @Get('contact/:contactId')
+    async findByContactId(@Param('contactId') contactId: string): Promise<ApiControllerResponse<any>> {
+        let searchContactId: any = contactId;
+        if (contactId.match(/^[0-9a-fA-F]{24}$/)) {
+            searchContactId = new Types.ObjectId(contactId);
+        }
+
+        const data = await this.conversationStateService.findByContactId(searchContactId);
+        if (!data) {
+            throw new NotFoundException(`Estado de conversación para contacto ${contactId} no encontrado`);
+        }
+
+        // Filtrar los datos para retornar solo los campos específicos
+        const dataObj = data.toObject ? data.toObject() : data;
+        const filteredData = {
+            contactId: dataObj.contactId,
+            flow: dataObj.flow,
+            step: dataObj.step,
+            data: dataObj.data,
+            createdAt: dataObj['createdAt']
+        };
+
+        return {
+            message: 'Estado de conversación más reciente recuperado exitosamente',
+            data: filteredData
+        };
+    }
+
     @Delete('contact/:contactId')
     async deleteByContactId(@Param('contactId') contactId: string): Promise<ApiControllerResponse<void>> {
         await this.conversationStateService.deleteByContactId(contactId);
         return {
             message: `Estados de conversación para el contacto ${contactId} eliminados exitosamente`,
             data: undefined
-        };
-    }
-
-    @Get('contact/:contactId')
-    async findByContactId(@Param('contactId') contactId: string): Promise<ApiControllerResponse<ConversationStateDocument>> {
-        // Convertir el contactId a ObjectId si es posible, o usar el string directamente
-        let searchContactId: any = contactId;
-        
-        // Si el contactId tiene formato de ObjectId (24 caracteres hexadecimales), convertirlo
-        if (contactId.match(/^[0-9a-fA-F]{24}$/)) {
-            searchContactId = new Types.ObjectId(contactId);
-        }
-        
-        const data = await this.conversationStateService.findByContactId(searchContactId);
-        if (!data) {
-            throw new NotFoundException(`Estado de conversación para contacto ${contactId} no encontrado`);
-        }
-        return {
-            message: 'Estado de conversación más reciente recuperado exitosamente',
-            data: data as unknown as ConversationStateDocument
         };
     }
 }
