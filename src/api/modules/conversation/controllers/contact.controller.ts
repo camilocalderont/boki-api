@@ -29,6 +29,7 @@ export class ContactController extends BaseMongoDbCrudController<ContactDocument
     // Filtrar los datos para retornar solo los campos específicos
     const contactObj = contact.toObject ? contact.toObject() : contact;
     const filteredData = {
+      _id: contactObj._id,
       phone: contactObj.phone,
       lastInteraction: contactObj.lastInteraction
     };
