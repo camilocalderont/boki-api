@@ -286,7 +286,7 @@ export class ProfessionalController extends BaseCrudController<ProfessionalEntit
   }
 
   @Get(':professionalId/available-slots')
-  async getAvailableSlots(@Param('professionalId', ParseIntPipe) professionalId: number, @Query('serviceId', ParseIntPipe) serviceId: number, @Query('date') dateString: string): Promise<ApiControllerResponse<any[]>> {
+  async getAvailableSlots(@Param('professionalId', ParseIntPipe) professionalId: number, @Query('serviceId', ParseIntPipe) serviceId: number, @Query('date') dateString: string): Promise<ApiControllerResponse<{ mañana: string[]; tarde: string[]; noche: string[]; mensaje?: string }>> {
     if (isNaN(professionalId) || professionalId <= 0) {
       throw new BadRequestException(`ID de profesional inválido: ${professionalId}. El ID debe ser un número positivo.`);
     }

@@ -14,6 +14,7 @@ import { ProfessionalBussinessHourService } from './professionalBussinessHour.se
 import { ProfessionalServiceService } from './professionalService.service';
 import { ProfessionalRepository } from '../repositories/professional.repository';
 import { Between, Not } from 'typeorm';
+import { parseISO, set, getDay, startOfDay, endOfDay, isBefore, addMinutes, areIntervalsOverlapping } from 'date-fns';
 
 @Injectable()
 export class ProfessionalService extends BaseCrudService<ProfessionalEntity, CreateProfessionalDto, UpdateProfessionalDto> {
@@ -529,250 +530,184 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
         return `${dayName} ${day} de ${month}`;
     }
 
-    async findAvailableSlots(professionalId: number, serviceId: number, date: Date): Promise<any> {
+    async findAvailableSlots(professionalId: number, serviceId: number, date: Date | string): Promise<{ mañana: string[]; tarde: string[]; noche: string[]; mensaje?: string }> {
         try {
             const professional = await this.findOne(professionalId);
-
             if (!professional) {
-                throw new NotFoundException([
-                    {
-                        code: 'PROFESIONAL_NO_ENCONTRADO',
-                        message: `No se encontró el profesional con ID: ${professionalId}`,
-                        field: 'Id'
-                    }
-                ], `No se encontró el profesional con ID: ${professionalId}`);
+                throw new NotFoundException(
+                    [
+                        {
+                            code: 'PROFESIONAL_NO_ENCONTRADO',
+                            message: `No se encontró el profesional con ID: ${professionalId}`,
+                            field: 'Id',
+                        },
+                    ],
+                    `No se encontró el profesional con ID: ${professionalId}`,
+                );
             }
 
-            const professionalService = await this.professionalServiceRepository.findOne({
-                where: {
-                    ProfessionalId: professionalId,
-                    ServiceId: serviceId
-                }
+            const profService = await this.professionalServiceRepository.findOne({
+                where: { ProfessionalId: professionalId, ServiceId: serviceId },
+            });
+            if (!profService) {
+                throw new NotFoundException(
+                    [
+                        {
+                            code: 'SERVICIO_NO_DISPONIBLE',
+                            message: `El profesional con ID ${professionalId} no ofrece el servicio con ID ${serviceId}`,
+                            field: 'ServiceId',
+                        },
+                    ],
+                    'El profesional no ofrece el servicio solicitado',
+                );
+            }
+
+            const reqDate = typeof date === 'string' ? parseISO(date) : date;
+            const baseDate = set(reqDate, {
+                hours: 12,
+                minutes: 0,
+                seconds: 0,
+                milliseconds: 0,
             });
 
-            if (!professionalService) {
-                throw new NotFoundException([
-                    {
-                        code: 'SERVICIO_NO_DISPONIBLE',
-                        message: `El profesional con ID ${professionalId} no ofrece el servicio con ID ${serviceId}`,
-                        field: 'ServiceId'
-                    }
-                ], `El profesional no ofrece el servicio solicitado`);
-            }
-
-            let requestedDate;
-
-            if (date instanceof Date) {
-                const isoString = date.toISOString();
-                const [year, month, day] = isoString.split('T')[0].split('-').map(Number);
-                requestedDate = new Date(year, month - 1, day, 12, 0, 0);
-            } else {
-                const [year, month, day] = (date as string).split('-').map(Number);
-                requestedDate = new Date(year, month - 1, day, 12, 0, 0);
-            }
-
-            let dayOfWeek = requestedDate.getDay();
-            dayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek;
-
-            const businessHour = await this.professionalBussinessHourRepository.findOne({
-                where: {
-                    ProfessionalId: professionalId,
-                    IDayOfWeek: dayOfWeek
-                }
+            const dow = getDay(baseDate) === 0 ? 7 : getDay(baseDate);
+            const bizHour = await this.professionalBussinessHourRepository.findOne({
+                where: { ProfessionalId: professionalId, IDayOfWeek: dow },
             });
-
-            if (!businessHour) {
+            if (!bizHour) {
                 return {
                     mañana: [],
                     tarde: [],
                     noche: [],
-                    mensaje: "El profesional no trabaja en este día"
+                    mensaje: 'El profesional no trabaja en este día',
                 };
             }
 
-            const startTimeStr = businessHour.TStartTime instanceof Date
-                ? businessHour.TStartTime.toTimeString().substring(0, 5)
-                : String(businessHour.TStartTime).substring(0, 5);
+            const startTime = this.parseTime(baseDate, bizHour.TStartTime);
+            const endTime = this.parseTime(baseDate, bizHour.TEndTime);
+            const breakStart = bizHour.TBreakStartTime
+                ? this.parseTime(baseDate, bizHour.TBreakStartTime)
+                : null;
+            const breakEnd = bizHour.TBreakEndTime
+                ? this.parseTime(baseDate, bizHour.TBreakEndTime)
+                : null;
 
-            const endTimeStr = businessHour.TEndTime instanceof Date
-                ? businessHour.TEndTime.toTimeString().substring(0, 5)
-                : String(businessHour.TEndTime).substring(0, 5);
-
-            const [startHour, startMinute] = startTimeStr.split(':').map(Number);
-            const [endHour, endMinute] = endTimeStr.split(':').map(Number);
-
-            const startDate = new Date(requestedDate);
-            startDate.setHours(startHour, startMinute, 0, 0);
-
-            const endDate = new Date(requestedDate);
-            endDate.setHours(endHour, endMinute, 0, 0);
-
-            let breakStartDate = null;
-            let breakEndDate = null;
-
-            if (businessHour.TBreakStartTime && businessHour.TBreakEndTime) {
-                const breakStartStr = businessHour.TBreakStartTime instanceof Date
-                    ? businessHour.TBreakStartTime.toTimeString().substring(0, 5)
-                    : String(businessHour.TBreakStartTime).substring(0, 5);
-
-                const breakEndStr = businessHour.TBreakEndTime instanceof Date
-                    ? businessHour.TBreakEndTime.toTimeString().substring(0, 5)
-                    : String(businessHour.TBreakEndTime).substring(0, 5);
-
-                const [breakStartHour, breakStartMinute] = breakStartStr.split(':').map(Number);
-                const [breakEndHour, breakEndMinute] = breakEndStr.split(':').map(Number);
-
-                breakStartDate = new Date(requestedDate);
-                breakStartDate.setHours(breakStartHour, breakStartMinute, 0, 0);
-
-                breakEndDate = new Date(requestedDate);
-                breakEndDate.setHours(breakEndHour, breakEndMinute, 0, 0);
+            const service = await this.dataSource
+                .getRepository('Service')
+                .findOne({
+                    where: { Id: serviceId },
+                    relations: ['ServiceStages', 'Company'],
+                });
+            if (!service || !service.ServiceStages.length) {
+                throw new NotFoundException(
+                    [
+                        {
+                            code: 'SERVICIO_NO_ENCONTRADO',
+                            message: `No se encontró el servicio con ID: ${serviceId} o no tiene etapas`,
+                            field: 'ServiceId',
+                        },
+                    ],
+                    'No se encontró el servicio',
+                );
+            }
+            if (!service.Company) {
+                throw new NotFoundException(
+                    [
+                        {
+                            code: 'COMPANIA_NO_ENCONTRADA',
+                            message: `No se encontró la compañía asociada al servicio ${serviceId}`,
+                            field: 'CompanyId',
+                        },
+                    ],
+                    'No se encontró la compañía',
+                );
             }
 
-            const serviceEntity = await this.dataSource.getRepository('Service').findOne({
-                where: { Id: serviceId },
-                relations: ['ServiceStages']
-            });
-
-            if (!serviceEntity || !serviceEntity.ServiceStages) {
-                throw new NotFoundException([
-                    {
-                        code: 'SERVICIO_NO_ENCONTRADO',
-                        message: `No se encontró el servicio con ID: ${serviceId} o no tiene etapas definidas`,
-                        field: 'ServiceId'
-                    }
-                ], `No se encontró el servicio`);
-            }
-
-            const totalServiceDuration = serviceEntity.ServiceStages.reduce(
-                (total, stage) => total + stage.IDurationMinutes, 0
+            const totalDuration = service.ServiceStages.reduce(
+                (sum, st) => sum + st.IDurationMinutes,
+                0,
             );
+            const slotFreq = service.Company.IFrequencyScheduling || 30;
 
-            const startOfDay = new Date(requestedDate);
-            startOfDay.setHours(0, 0, 0, 0);
+            const existing = await this.dataSource
+                .getRepository('Appointment')
+                .find({
+                    where: {
+                        ProfessionalId: professionalId,
+                        DtDate: Between(startOfDay(reqDate), endOfDay(reqDate)),
+                        CurrentStateId: Not(3),
+                    },
+                });
 
-            const endOfDay = new Date(requestedDate);
-            endOfDay.setHours(23, 59, 59, 999);
+            const slots: Date[] = [];
+            let cursor = startTime;
+            while (isBefore(cursor, endTime)) {
+                const slotEnd = addMinutes(cursor, slotFreq);
+                const serviceEnd = addMinutes(cursor, totalDuration);
 
-            const existingAppointments = await this.dataSource.getRepository('Appointment').find({
-                where: {
-                    ProfessionalId: professionalId,
-                    DtDate: Between(startOfDay, endOfDay),
-                    CurrentStateId: Not(3)
-                },
-                order: { TStartTime: 'ASC' }
-            });
+                const inBreak = breakStart && breakEnd &&
+                    cursor >= breakStart && cursor < breakEnd;
 
-            const company = await this.dataSource.getRepository('Company').findOne({
-                where: { Id: serviceEntity.CompanyId }
-            });
-
-            if (!company) {
-                throw new NotFoundException([
-                    {
-                        code: 'COMPANIA_NO_ENCONTRADA',
-                        message: `No se encontró la compañía asociada al servicio con ID: ${serviceId}`,
-                        field: 'CompanyId'
-                    }
-                ], `No se encontró la compañía`);
-            }
-
-            const availableTimeSlots = [];
-            const slotDuration = company.IFrequencyScheduling || 10;
-
-            let currentTime = new Date(startDate);
-
-            while (currentTime < endDate) {
-                const slotStartTime = new Date(currentTime);
-                const slotEndTime = new Date(currentTime);
-                slotEndTime.setMinutes(slotEndTime.getMinutes() + slotDuration);
-
-                const serviceEndTime = new Date(slotStartTime);
-                serviceEndTime.setMinutes(serviceEndTime.getMinutes() + totalServiceDuration);
-
-                let isInBreakTime = false;
-                if (breakStartDate && breakEndDate) {
-                    isInBreakTime = slotStartTime >= breakStartDate && slotStartTime < breakEndDate;
-                }
-
-                let overlapsWithAppointment = false;
-                for (const appointment of existingAppointments) {
-                    const appointmentStartTime = new Date(requestedDate);
-                    const [appHour, appMinute] = appointment.TStartTime.split(':').map(Number);
-                    appointmentStartTime.setHours(appHour, appMinute, 0, 0);
-
-                    const appointmentEndTime = new Date(requestedDate);
-                    const [appEndHour, appEndMinute] = appointment.TEndTime.split(':').map(Number);
-                    appointmentEndTime.setHours(appEndHour, appEndMinute, 0, 0);
-
-                    if (
-                        (slotStartTime >= appointmentStartTime && slotStartTime < appointmentEndTime) ||
-                        (serviceEndTime > appointmentStartTime && serviceEndTime <= appointmentEndTime) ||
-                        (slotStartTime <= appointmentStartTime && serviceEndTime >= appointmentEndTime)
-                    ) {
-                        overlapsWithAppointment = true;
-                        break;
-                    }
-                }
+                const clash = existing.some(appt => {
+                    const aStart = this.parseTime(baseDate, appt.TStartTime);
+                    const aEnd = this.parseTime(baseDate, appt.TEndTime);
+                    return areIntervalsOverlapping(
+                        { start: cursor, end: serviceEnd },
+                        { start: aStart, end: aEnd },
+                    );
+                });
 
                 if (
-                    serviceEndTime <= endDate &&
-                    !isInBreakTime &&
-                    !overlapsWithAppointment
+                    isBefore(serviceEnd, endTime) &&
+                    !inBreak &&
+                    !clash
                 ) {
-                    const timeSlot = {
-                        time: this.formatTime(slotStartTime),
-                        startTime: slotStartTime,
-                        hour: slotStartTime.getHours()
-                    };
-                    availableTimeSlots.push(timeSlot);
+                    slots.push(cursor);
                 }
 
-                currentTime.setMinutes(currentTime.getMinutes() + slotDuration);
+                cursor = slotEnd;
             }
 
-            const morningSlots = availableTimeSlots
-                .filter(slot => slot.hour >= 6 && slot.hour < 12)
-                .map(slot => slot.time);
+            const mañana = slots
+                .filter(d => d.getHours() < 12)
+                .map(d => this.formatTime(d));
+            const tarde = slots
+                .filter(d => d.getHours() >= 12 && d.getHours() < 18)
+                .map(d => this.formatTime(d));
+            const noche = slots
+                .filter(d => d.getHours() >= 18 || d.getHours() < 6)
+                .map(d => this.formatTime(d));
 
-            const afternoonSlots = availableTimeSlots
-                .filter(slot => slot.hour >= 12 && slot.hour < 18)
-                .map(slot => slot.time);
-
-            const eveningSlots = availableTimeSlots
-                .filter(slot => (slot.hour >= 18 && slot.hour <= 23) || (slot.hour >= 0 && slot.hour < 6))
-                .map(slot => slot.time);
-
-            return {
-                mañana: morningSlots,
-                tarde: afternoonSlots,
-                noche: eveningSlots
-            };
+            return { mañana, tarde, noche };
         } catch (error) {
-            if (error instanceof NotFoundException) {
-                throw error;
-            }
-
+            if (error instanceof NotFoundException) throw error;
             throw new BadRequestException(
-                [{
-                    code: 'ERROR_BUSQUEDA_SLOTS',
-                    message: `Ha ocurrido un error al buscar los espacios disponibles: ${error.message || 'Error desconocido'}`,
-                    field: 'professional'
-                }],
-                'Ha ocurrido un error al buscar los espacios disponibles'
+                [
+                    {
+                        code: 'ERROR_BUSQUEDA_SLOTS',
+                        message: `Error al buscar espacios disponibles: ${error.message}`,
+                        field: 'professional',
+                    },
+                ],
+                'Ha ocurrido un error al buscar los espacios disponibles',
             );
         }
     }
 
+    private parseTime(base: Date, time: string | Date): Date {
+        const ts = time instanceof Date
+            ? time.toTimeString().slice(0, 5)
+            : String(time).slice(0, 5);
+        const [h, m] = ts.split(':').map(Number);
+        return set(base, { hours: h, minutes: m, seconds: 0, milliseconds: 0 });
+    }  
+
     private formatTime(date: Date): string {
-        let hours = date.getHours();
-        const minutes = date.getMinutes().toString().padStart(2, '0');
-        const ampm = hours >= 12 ? 'PM' : 'AM';
-
-        hours = hours % 12;
-        hours = hours ? hours : 12;
-
-        return `${hours}:${minutes} ${ampm}`;
+        const h = date.getHours();
+        const m = date.getMinutes().toString().padStart(2, '0');
+        const h12 = h % 12 || 12;
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        return `${h12}:${m} ${ampm}`;
     }
 
     async findByServiceIdForLLM(serviceId: number, startDate?: Date): Promise<{ Id: number; VcName: string; VcProfession: string; VcSpecialization: string; Disponibilidad: any[] }[]> {
