@@ -1,27 +1,27 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { CompanyAgentEntity } from './entities/companyAgent.entity';
+import { CompanyFlowDefinitionEntity } from './entities/companyFlowDefinition.entity';
 import { CompanyWhatsappSettingEntity } from './entities/companyWhatsappSetting.entity';
-import { CompanyAgentController } from './controllers/companyAgent.controller';
+import { CompanyFlowController } from './controllers/companyFlow.controller';
 import { CompanyWhatsappSettingController } from './controllers/companyWhatsappSetting.controller';
-import { CompanyAgentService } from './services/companyAgent.service';
+import { CompanyFlowService } from './services/companyFlow.service';
 import { CompanyWhatsappSettingService } from './services/companyWhatsappSetting.service';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([
-            CompanyAgentEntity,
+            CompanyFlowDefinitionEntity,
             CompanyWhatsappSettingEntity
         ]),
     ],
     controllers: [
-        CompanyAgentController,
+        CompanyFlowController,
         CompanyWhatsappSettingController
     ],
     providers: [
         {
-            provide: CompanyAgentService,
-            useClass: CompanyAgentService
+            provide: CompanyFlowService,
+            useClass: CompanyFlowService
         },
         {
             provide: CompanyWhatsappSettingService,
@@ -29,7 +29,7 @@ import { CompanyWhatsappSettingService } from './services/companyWhatsappSetting
         }
     ],
     exports: [
-        CompanyAgentService,
+        CompanyFlowService,
         CompanyWhatsappSettingService
     ],
 })

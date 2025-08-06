@@ -20,7 +20,10 @@ import { AppointmentStageEntity } from '../modules/appointment/entities/appointm
 import { TagsEntity } from '../modules/tags/entities/tags.entity';
 import { FaqsEntity } from '../modules/faqs/entities/faqs.entity';
 import { FaqsTagsEntity } from '../modules/faqs/entities/faqs-tags.entity';
-import { CompanyAgentEntity } from '../modules/llm/entities/companyAgent.entity';
+import { CompanyFlowDefinitionEntity } from '../modules/llm/entities/companyFlowDefinition.entity';
+import { CompanyFlowStepEntity } from '../modules/llm/entities/companyFlowStep.entity';
+import { CompanyFlowConditionEntity } from '../modules/llm/entities/companyFlowCondition.entity';
+import { CompanyFlowToolEntity } from '../modules/llm/entities/companyFlowTool.entity';
 import { CompanyWhatsappSettingEntity } from '../modules/llm/entities/companyWhatsappSetting.entity';
 import * as dotenv from 'dotenv';
 
@@ -33,7 +36,7 @@ export const AppDataSource = new DataSource({
   username: process.env.POSTGRES_DB_USER,
   password: process.env.POSTGRES_DB_PASSWORD,
   database: process.env.POSTGRES_DB_NAME,
-  entities: [ClientEntity, UsersEntity, CompanyEntity, CompanyBlockedTimeEntity, CompanyBranchEntity, CompanyBranchRoomEntity, ProfessionalEntity, ProfessionalBussinessHourEntity, ProfessionalServiceEntity, CategoryServiceEntity, ServiceEntity, ServiceStageEntity, StateEntity, AppointmentStateEntity, AppointmentEntity, AppointmentStageEntity, TagsEntity, FaqsEntity, FaqsTagsEntity, CompanyAgentEntity, CompanyWhatsappSettingEntity],
+  entities: [ClientEntity, UsersEntity, CompanyEntity, CompanyBlockedTimeEntity, CompanyBranchEntity, CompanyBranchRoomEntity, ProfessionalEntity, ProfessionalBussinessHourEntity, ProfessionalServiceEntity, CategoryServiceEntity, ServiceEntity, ServiceStageEntity, StateEntity, AppointmentStateEntity, AppointmentEntity, AppointmentStageEntity, TagsEntity, FaqsEntity, FaqsTagsEntity, CompanyFlowDefinitionEntity, CompanyFlowStepEntity, CompanyFlowConditionEntity, CompanyFlowToolEntity, CompanyWhatsappSettingEntity],
   //comando para generar migraciones npx typeorm-ts-node-commonjs migration:generate src/api/database/migrations/crateNombreTable -d src/api/database/database.module.ts
   migrations: [join(__dirname, 'migrations', '**/*.{ts,js}')],
   logging: true,

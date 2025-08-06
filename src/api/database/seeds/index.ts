@@ -11,6 +11,7 @@ import { appointmentSeed } from './appointment.seed';
 import { clientSeed } from './client.seed';
 import { faqsTagsSeed } from './faqstags.seed';
 import { faqsSeed } from './faqs.seed';
+import { companyFlowSeed } from './companyFlow.seed';
 
 export const runSeeds = async (dataSource: DataSource): Promise<void> => {
     if (!dataSource.isInitialized) {
@@ -31,6 +32,7 @@ export const runSeeds = async (dataSource: DataSource): Promise<void> => {
         await faqsSeed(dataSource);
         await faqsTagsSeed(dataSource);
         await appointmentSeed(dataSource);
+        await companyFlowSeed(dataSource);
     } catch (error) {
         throw error;
     }

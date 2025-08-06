@@ -4,7 +4,7 @@ import { CompanyBlockedTimeEntity } from './companyBlockedTime.entity';
 import { CategoryServiceEntity } from '../../categoryService/entities/categoryService.entity';
 import { ClientEntity } from '../../client/entities/client.entity';
 import { CompanyWhatsappSettingEntity } from '../../llm/entities/companyWhatsappSetting.entity';
-import { CompanyAgentEntity } from '../../llm/entities/companyAgent.entity';
+import { CompanyFlowDefinitionEntity } from '../../llm/entities/companyFlowDefinition.entity';
 
 @Entity('Company')
 export class CompanyEntity {
@@ -56,8 +56,8 @@ export class CompanyEntity {
     @OneToMany(() => CompanyWhatsappSettingEntity, companyWhatsappSetting => companyWhatsappSetting.Company)
     CompanyWhatsappSettings: CompanyWhatsappSettingEntity[];
 
-    @OneToMany(() => CompanyAgentEntity, companyAgent => companyAgent.Company)
-    CompanyAgents: CompanyAgentEntity[];
+    @OneToMany(() => CompanyFlowDefinitionEntity, companyFlowDefinition => companyFlowDefinition.Company)
+    CompanyFlowDefinitions: CompanyFlowDefinitionEntity[];
 
     @OneToMany(() => CompanyBlockedTimeEntity, companyBlockedTime => companyBlockedTime.Company)
     CompanyBlockedTimes: CompanyBlockedTimeEntity[];
