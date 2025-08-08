@@ -2,6 +2,9 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CompanyFlowDefinitionEntity } from './entities/companyFlowDefinition.entity';
 import { CompanyWhatsappSettingEntity } from './entities/companyWhatsappSetting.entity';
+import { CompanyFlowStepEntity } from './entities/companyFlowStep.entity';
+import { CompanyFlowConditionEntity } from './entities/companyFlowCondition.entity';
+import { CompanyFlowToolEntity } from './entities/companyFlowTool.entity';
 import { CompanyFlowController } from './controllers/companyFlow.controller';
 import { CompanyWhatsappSettingController } from './controllers/companyWhatsappSetting.controller';
 import { CompanyFlowService } from './services/companyFlow.service';
@@ -11,6 +14,9 @@ import { CompanyWhatsappSettingService } from './services/companyWhatsappSetting
     imports: [
         TypeOrmModule.forFeature([
             CompanyFlowDefinitionEntity,
+            CompanyFlowStepEntity,
+            CompanyFlowConditionEntity,
+            CompanyFlowToolEntity,
             CompanyWhatsappSettingEntity
         ]),
     ],
