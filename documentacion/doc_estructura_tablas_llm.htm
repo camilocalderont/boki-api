@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registros BD para Flujo AI de Bokibot</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+        
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 1.2em;
+        }
+        
+        .table-section {
+            background: white;
+            margin: 25px 0;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .table-title {
+            background: #34495e;
+            color: white;
+            padding: 20px;
+            font-size: 1.4em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .table-description {
+            background: #ecf0f1;
+            padding: 15px 20px;
+            font-style: italic;
+            color: #2c3e50;
+            border-bottom: 1px solid #bdc3c7;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0;
+        }
+        
+        .data-table th {
+            background: #3498db;
+            color: white;
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9em;
+            border-right: 1px solid #2980b9;
+        }
+        
+        .data-table th:last-child {
+            border-right: none;
+        }
+        
+        .data-table td {
+            padding: 10px;
+            border-bottom: 1px solid #ecf0f1;
+            border-right: 1px solid #ecf0f1;
+            vertical-align: top;
+            font-size: 0.85em;
+        }
+        
+        .data-table td:last-child {
+            border-right: none;
+        }
+        
+        .data-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        .data-table tr:hover {
+            background: #e3f2fd;
+        }
+        
+        .json-content {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75em;
+            max-width: 300px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        
+        .highlight {
+            background: #fff3cd;
+            padding: 3px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .step-number {
+            background: #e74c3c;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 50%;
+            font-weight: bold;
+            display: inline-block;
+            min-width: 20px;
+            text-align: center;
+        }
+        
+        .flow-diagram {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 2px dashed #3498db;
+        }
+        
+        .flow-step {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 8px 15px;
+            margin: 5px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+        
+        .arrow {
+            color: #3498db;
+            font-size: 1.2em;
+            margin: 0 5px;
+        }
+        
+        .note-box {
+            background: #e8f6ff;
+            border-left: 5px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .note-box h4 {
+            margin: 0 0 10px 0;
+            color: #2980b9;
+        }
+        
+        .code-snippet {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Registros de Base de Datos</h1>
+            <p>Migración del Flujo AI Actual a Estructura Dinámica</p>
+        </div>
+
+        <div class="note-box">
+            <h4>📋 Resumen del Mapeo</h4>
+            <p>Estos registros representan exactamente cómo tu flujo AI actual (<code>AIAppointmentSteps</code> + <code>AIAppointmentFlow</code>) 
+            se transformaría en la nueva estructura de base de datos dinámica. Cada paso, condición y herramienta que usa tu código actual 
+            está mapeado a registros configurables.</p>
+        </div>
+
+        <!-- CompanyAgents Evolucionado -->
+        <div class="table-section">
+            <div class="table-title">
+                🤖 CompanyAgents (Evolucionado)
+            </div>
+            <div class="table-description">
+                Agent que orquesta el flujo AI actual. Se mantiene compatible con el código existente pero agrega capacidades dinámicas.
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>CompanyId</th>
+                        <th>VcAgentName</th>
+                        <th>VcAgentType</th>
+                        <th>TxPromptTemplate (Legacy)</th>
+                        <th>TxUnifiedPromptTemplate</th>
+                        <th>JsonPromptVariables</th>
+                        <th>BIsFlowOrchestrator</th>
+                        <th>BIsActive</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="highlight">1</span></td>
+                        <td>1</td>
+                        <td>AI Appointment Assistant</td>
+                        <td>flow_orchestrator</td>
+                        <td>Eres un asistente virtual de agendamiento... (para compatibilidad)</td>
+                        <td><div class="json-content">Eres un asistente virtual de una clínica de belleza.
+
+CONTEXTO COMPLETO:
+{{ llm_context }}
+
+DATOS RECOPILADOS:
+{{ collected_data }}
+
+CONVERSACIÓN PREVIA:
+{{ conversation_history }}
+
+STEP ACTUAL: {{ current_step }}
+MENSAJE USUARIO: "{{ user_message }}"
+
+Analiza el mensaje y extrae información relevante para agendar una cita.
+Responde con JSON válido con la estructura especificada.</div></td>
+                        <td><div class="json-content">{
+  "llm_context": "Contexto completo del negocio",
+  "collected_data": "Datos ya recopilados",
+  "conversation_history": "Historial de mensajes",
+  "current_step": "Paso actual del flujo",
+  "user_message": "Mensaje del usuario"
+}</div></td>
+                        <td><span class="status-active">true</span></td>
+                        <td><span class="status-active">true</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- CompanyFlowDefinition -->
+        <div class="table-section">
+            <div class="table-title">
+                🏗️ CompanyFlowDefinition
+            </div>
+            <div class="table-description">
+                Definición principal del flujo AI de agendamiento, basada en tu implementación actual.
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>CompanyId</th>
+                        <th>AgentId</th>
+                        <th>VcFlowName</th>
+                        <th>VcDisplayName</th>
+                        <th>TxSystemPrompt</th>
+                        <th>TxUserPromptTemplate</th>
+                        <th>JsonFlowConfig</th>
+                        <th>BIsActive</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="highlight">1</span></td>
+                        <td>1</td>
+                        <td>1</td>
+                        <td>ai_appointment</td>
+                        <td>Agendamiento con IA</td>
+                        <td>Eres un asistente virtual de agendamiento de citas. Analiza el mensaje del usuario y extrae información. Responde de manera amigable y profesional.</td>
+                        <td><div class="json-content">{{ current_step == 'initial' ? 'Generar mensaje inicial atractivo con servicios del contexto' : '' }}
+{{ current_step == 'waiting_service' ? 'Identificar servicio mencionado y sugerir opciones si no está claro' : '' }}
+{{ current_step == 'waiting_professional' ? 'Identificar profesional o sugerir opciones del servicio seleccionado' : '' }}
+{{ current_step == 'waiting_date' ? 'Identificar fecha mencionada o sugerir opciones disponibles' : '' }}
+{{ current_step == 'waiting_time' ? 'Identificar hora mencionada o sugerir horarios disponibles' : '' }}
+
+# Mensaje del usuario: {{ user_message }}
+# Contexto: {{ llm_context }}
+# Datos recopilados: {{ collected_data }}</div></td>
+                        <td><div class="json-content">{
+  "max_retries": 3,
+  "temperature": 0.4,
+  "max_tokens": 400,
+  "fallback_enabled": true,
+  "auto_advance": true,
+  "required_fields": [
+    "ClientId", "ServiceId", 
+    "ProfessionalId", "DtDate", "TStartTime"
+  ]
+}</div></td>
+                        <td><span class="status-active">true</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="flow-diagram">
+            <h4>🔄 Flujo de Pasos:</h4>
+            <span class="flow-step">initial</span>
+            <span class="arrow">→</span>
+            <span class="flow-step">waiting_service</span>
+            <span class="arrow">→</span>
+            <span class="flow-step">waiting_professional</span>
+            <span class="arrow">→</span>
+            <span class="flow-step">waiting_date</span>
+            <span class="arrow">→</span>
+            <span class="flow-step">waiting_time</span>
+            <span class="arrow">→</span>
+            <span class="flow-step">waiting_confirmation</span>
+        </div>
+
+        <!-- CompanyFlowStep -->
+        <div class="table-section">
+            <div class="table-title">
+                📝 CompanyFlowStep
+            </div>
+            <div class="table-description">
+                Pasos específicos del flujo AI, mapeados desde tu código actual (_determine_next_step, _is_current_step_complete).
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>FlowDefinitionId</th>
+                        <th>VcStepKey</th>
+                        <th>VcStepName</th>
+                        <th>IStepOrder</th>
+                        <th>TxExecutionCondition</th>
+                        <th>TxStepOutput</th>
+                        <th>JsonExpectedData</th>
+                        <th>JsonStepConfig</th>
+                        <th>BIsActive</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="step-number">1</span></td>
+                        <td>1</td>
+                        <td>initial</td>
+                        <td>Inicialización del Flujo</td>
+                        <td>1</td>
+                        <td>$flowInfo.currentStep === 'initial' || $flowInfo.currentStep === ''</td>
+                        <td>{{ _generate_initial_message(context_data) }}</td>
+                        <td><div class="json-content">{
+  "extract_fields": ["ClientId"],
+  "required_fields": ["ClientId"],
+  "validation_rules": {
+    "ClientId": "required|integer"
+  }
+}</div></td>
+                        <td><div class="json-content">{
+  "use_ai_generation": true,
+  "next_step_on_success": "waiting_service",
+  "initialize_collected_data": true
+}</div></td>
+                        <td><span class="status-active">true</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="step-number">2</span></td>
+                        <td>1</td>
+                        <td>waiting_service</td>
+                        <td>Selección de Servicio</td>
+                        <td>2</td>
+                        <td>$flowInfo.currentData.ServiceId == null</td>
+                        <td>Analiza si el usuario menciona un servicio específico y ayúdalo a seleccionar.</td>
+                        <td><div class="json-content">{
+  "extract_fields": ["ServiceId"],
+  "required_fields": ["ServiceId"],
+  "validation_rules": {
+    "ServiceId": "required|integer|exists:services"
+  }
+}</div></td>
+                        <td><div class="json-content">{
+  "auto_advance_when_complete": true,
+  "next_step_on_success": "waiting_professional",
+  "provide_suggestions": true,
+  "max_suggestions": 5
+}</div></td>
+                        <td><span class="status-active">true</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="step-number">3</span></td>
+                        <td>1</td>
+                        <td>waiting_professional</td>
+                        <td>Selección de Profesional</td>
+                        <td>3</td>
+                        <td>$flowInfo.currentData.ServiceId != null && $flowInfo.currentData.ProfessionalId == null</td>
+                        <td>Ayuda al usuario a seleccionar un profesional que ofrezca el servicio elegido.</td>
+                        <td><div class="json-content">{
+  "extract_fields": ["ProfessionalId"],
+  "required_fields": ["ProfessionalId"],
+  "validation_rules": {
+    "ProfessionalId": "required|integer|offers_service:ServiceId"
+  }
+}</div></td>
+                        <td><div class="json-content">{
+  "filter_by_service": true,
+  "professional_filter_critical": true,
+  "next_step_on_success": "waiting_date",
+  "provide_suggestions": true
+}</div></td>
+                        <td><span class="status-active">true</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="step-number">4</span></td>
+                        <td>1</td>
+                        <td>waiting_date</td>
+                        <td>Selección de Fecha</td>
+                        <td>4</td>
+                        <td>$flowInfo.currentData.ProfessionalId != null && $flowInfo.currentData.DtDate == null</td>
+                        <td>Ayuda al usuario a seleccionar una fecha disponible.</td>
+                        <td><div class="json-content">{
+  "extract_fields": ["DtDate"],
+  "required_fields": ["DtDate"],
+  "validation_rules": {
+    "DtDate": "required|date|after:today|format:YYYY-MM-DD"
+  }
+}</div></td>
+                        <td><div class="json-content">{
+  "convert_relative_dates": true,
+  "date_mapping": {
+    "mañana": "{{ tomorrow_date }}",
+    "hoy": "{{ today_date }}"
+  },
+  "next_step_on_success": "waiting_time"
+}</div></td>
+                        <td><span class="status-active">true</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="step-number">5</span></td>
+                        <td>1</td>
+                        <td>waiting_time</td>
+                        <td>Selección de Hora</td>
+                        <td>5</td>
+                        <td>$flowInfo.currentData.DtDate != null && $flowInfo.currentData.TStartTime == null</td>
+                        <td>Ayuda al usuario a seleccionar un horario disponible para la fecha elegida.</td>
+                        <td><div class="json-content">{
+  "extract_fields": ["TStartTime"],
+  "required_fields": ["TStartTime"],
+  "validation_rules": {
+    "TStartTime": "required|time|available_slot"
+  }
+}</div></td>
+                        <td><div class="json-content">{
+  "show_available_slots": true,
+  "slots_per_day": 5,
+  "format_time_12h": true,
+  "next_step_on_success": "waiting_confirmation"
+}</div></td>
+                        <td><span class="status-active">true</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="step-number">6</span></td>
+                        <td>1</td>
+                        <td>waiting_confirmation</td>
+                        <td>Confirmación Final</td>
+                        <td>6</td>
+                        <td>$flowInfo.allDataComplete</td>
+                        <td>{{ _generate_confirmation_message(collected_data, context) }}</td>
+                        <td><div class="json-content">{
+  "extract_fields": ["confirmation"],
+  "required_fields": ["confirmation"],
+  "validation_rules": {
+    "confirmation": "required|boolean"
+  }
+}</div></td>
+                        <td><div class="json-content">{
+  "use_ai_generation": true,
+  "show_whatsapp_buttons": true,
+  "buttons": [
+    {"id": "confirm_yes", "title": "✅ Sí, confirmar"},
+    {"id": "confirm_no", "title": "❌ Cancelar"}
+  ]
+}</div></td>
+                        <td><span class="status-active">true</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- CompanyFlowCondition -->
+        <div class="table-section">
+            <div class="table-title">
+                🎯 CompanyFlowCondition
+            </div>
+            <div class="table-description">
+                Condiciones globales del flujo, basadas en tu lógica actual (_all_data_collected, _is_current_step_complete).
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>FlowDefinitionId</th>
+                        <th>VcConditionKey</th>
+                        <th>VcConditionName</th>
+                        <th>TxConditionExpression</th>
+                        <th>VcConditionType</th>
+                        <th>BIsActive</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>1</td>
+                        <td>hasServiceId</td>
+                        <td>Usuario ha seleccionado servicio</td>
+                        <td>$flowInfo.currentData.ServiceId != null && $flowInfo.currentData.ServiceId > 0</td>
+                        <td>data_check</td>
+                        <td><span class="status-active">true</span></td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>1</td>
+                        <td>hasProfessionalId</td>
+                        <td>Usuario ha seleccionado profesional</td>
+                        <td>$flowInfo.currentData.ProfessionalId != null && $flowInfo.currentData.ProfessionalId > 0</td>
+                        <td>data_check</td>
+                        <td><span class="status-active">true</span></td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td>1</td>
+                        <td>hasDateTime</td>
+                        <td>Usuario ha definido fecha y hora</td>
+                        <td>$flowInfo.currentData.DtDate != null && $flowInfo.currentData.TStartTime != null</td>
+                        <td>data_check</td>
+                        <td><span class="status-active">true</span></td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td>1</td>
+                        <td>allDataComplete</td>
+                        <td>Todos los datos están completos</td>
+                        <td>$flowInfo.hasServiceId && $flowInfo.hasProfessionalId && $flowInfo.hasDateTime && $flowInfo.currentData.ClientId != null</td>
+                        <td>completion_check</td>
+                        <td><span class="status-active">true</span></td>
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        <td>1</td>
+                        <td>currentStepComplete</td>
+                        <td>Paso actual está completo</td>
+                        <td>($flowInfo.currentStep === 'waiting_service' && $flowInfo.hasServiceId) || ($flowInfo.currentStep === 'waiting_professional' && $flowInfo.hasProfessionalId) || ($flowInfo.currentStep === 'waiting_date' && $flowInfo.currentData.DtDate != null) || ($flowInfo.currentStep === 'waiting_time' && $flowInfo.currentData.TStartTime != null)</td>
+                        <td>step_completion</td>
+                        <td><span class="status-active">true</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- CompanyFlowTool -->
+        <div class="table-section">
+            <div class="table-title">
+                🔧 CompanyFlowTool
+            </div>
+            <div class="table-description">
+                Herramientas y APIs utilizadas por tu flujo actual (boki_api calls, LLM generations).
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>FlowDefinitionId</th>
+                        <th>VcToolType</th>
+                        <th>VcToolName</th>
+                        <th>JsonToolConfig</th>
+                        <th>TxUsageCondition</th>
+                        <th>BIsActive</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>1</td>
+                        <td>api_call</td>
+                        <td>Get LLM Appointment Context</td>
+                        <td><div class="json-content">{
+  "method": "get_llm_appointment_context",
+  "params": {
+    "company_id": "{{ company_id }}",
+    "start_date": "{{ current_date }}"
+  },
+  "response_mapping": {
+    "llm_context": "$response"
+  }
+}</div></td>
+                        <td>$flowInfo.currentStep === 'initial'</td>
+                        <td><span class="status-active">true</span></td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>1</td>
+                        <td>llm_generation</td>
+                        <td>Generate Initial Message</td>
+                        <td><div class="json-content">{
+  "method": "generate_response",
+  "prompt_template": "Eres un asistente virtual de una clínica de belleza. Genera un mensaje inicial atractivo...",
+  "max_tokens": 200,
+  "temperature": 0.7,
+  "response_processing": "replace_newlines"
+}</div></td>
+                        <td>$flowInfo.currentStep === 'initial'</td>
+                        <td><span class="status-active">true</span></td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td>1</td>
+                        <td>llm_generation</td>
+                        <td>Process AI Step</td>
+                        <td><div class="json-content">{
+  "method": "generate_json_response",
+  "prompt_template": "{{ _create_targeted_prompt }}",
+  "max_tokens": 400,
+  "temperature": 0.4,
+  "max_retries": 3,
+  "response_format": "json"
+}</div></td>
+                        <td>$flowInfo.currentStep in ['waiting_service', 'waiting_professional', 'waiting_date', 'waiting_time']</td>
+                        <td><span class="status-active">true</span></td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td>1</td>
+                        <td>llm_generation</td>
+                        <td>Generate Confirmation Message</td>
+                        <td><div class="json-content">{
+  "method": "generate_response",
+  "prompt_template": "Genera mensaje de confirmación de cita con TODOS los detalles...",
+  "max_tokens": 250,
+  "temperature": 0.2,
+  "response_processing": "replace_newlines"
+}</div></td>
+                        <td>$flowInfo.currentStep === 'waiting_confirmation' && $flowInfo.allDataComplete</td>
+                        <td><span class="status-active">true</span></td>
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        <td>1</td>
+                        <td>api_call</td>
+                        <td>Create Appointment</td>
+                        <td><div class="json-content">{
+  "method": "create_appointment",
+  "params": {
+    "ClientId": "{{ collected_data.ClientId }}",
+    "ServiceId": "{{ collected_data.ServiceId }}",
+    "ProfessionalId": "{{ collected_data.ProfessionalId }}",
+    "DtDate": "{{ collected_data.DtDate }}",
+    "TStartTime": "{{ collected_data.TStartTime }}"
+  },
+  "response_mapping": {
+    "appointment_id": "$response.Id"
+  }
+}</div></td>
+                        <td>$flowInfo.currentStep === 'waiting_confirmation' && $flowInfo.allDataComplete && confirmation === true</td>
+                        <td><span class="status-active">true</span></td>
+                    </tr>
+                    <tr>
+                        <td>6</td>
+                        <td>1</td>
+                        <td>llm_generation</td>
+                        <td>Generate Success Message</td>
+                        <td><div class="json-content">{
+  "method": "generate_response",
+  "prompt_template": "Genera mensaje de confirmación exitosa con TODOS los detalles...",
+  "max_tokens": 350,
+  "temperature": 0.5,
+  "variables": {
+    "appointment_id": "{{ appointment_id }}",
+    "collected_data": "{{ collected_data }}",
+    "context": "{{ llm_context }}"
+  }
+}</div></td>
+                        <td>$flowInfo.appointmentCreated === true</td>
+                        <td><span class="status-active">true</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- CompanyFlowExecution (Ejemplo de Log) -->
+        <div class="table-section">
+            <div class="table-title">
+                📊 CompanyFlowExecution (Ejemplo de Log)
+            </div>
+            <div class="table-description">
+                Estado de ejecución en vivo, reemplaza/complementa tu conversation_states de MongoDB.
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>FlowDefinitionId</th>
+                        <th>VcContactId</th>
+                        <th>VcSessionId</th>
+                        <th>VcCurrentStep</th>
+                        <th>JsonFlowState</th>
+                        <th>VcStatus</th>
+                        <th>DtStartedAt</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>1</td>
+                        <td>57312345678</td>
+                        <td>session_20250805_143022</td>
+                        <td>waiting_professional</td>
+                        <td><div class="json-content">{
+  "collected_data": {
+    "ClientId": 123,
+    "ServiceId": 1,
+    "ProfessionalId": null,
+    "DtDate": null,
+    "TStartTime": null,
+    "BIsCompleted": false
+  },
+  "conversation_history": [
+    {
+      "role": "assistant",
+      "content": "🤖 ¡Hola! Soy tu asistente virtual..."
+    },
+    {
+      "role": "user", 
+      "content": "Quiero agendar manicura"
+    },
+    {
+      "role": "assistant",
+      "content": "✅ Perfecto, has elegido Manicura..."
+    }
+  ],
+  "llm_context": { "...": "contexto_completo" },
+  "variables": {
+    "company_id": 1,
+    "current_date": "2025-08-05"
+  },
+  "execution_history": [
+    {
+      "step": "initial",
+      "timestamp": "2025-08-05T14:30:22Z",
+      "input": "Quiero agendar una cita",
+      "output": "Mensaje inicial generado",
+      "conditions_evaluated": {
+        "hasServiceId": false,
+        "allDataComplete": false
+      }
+    }
+  ]
+}</div></td>
+                        <td><span class="status-active">active</span></td>
+                        <td>2025-08-05 14:30:22</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Comparación Código vs BD -->
+        <div class="table-section">
+            <div class="table-title">
+                🔄 Mapeo: Código Actual → Registros BD
+            </div>
+            <div class="table-description">
+                Comparación directa entre tu código actual y cómo se representa en la nueva estructura.
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Función en tu Código</th>
+                        <th>Equivalente en BD</th>
+                        <th>Tabla</th>
+                        <th>Campo/Configuración</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>_determine_next_step()</code></td>
+                        <td>Condiciones dinámicas</td>
+                        <td>CompanyFlowCondition</td>
+                        <td>TxConditionExpression con lógica if/else</td>
+                    </tr>
+                    <tr>
+                        <td><code>_all_data_collected()</code></td>
+                        <td>Condición "allDataComplete"</td>
+                        <td>CompanyFlowCondition</td>
+                        <td>VcConditionKey = "allDataComplete"</td>
+                    </tr>
+                    <tr>
+                        <td><code>_is_current_step_complete()</code></td>
+                        <td>Condición "currentStepComplete"</td>
+                        <td>CompanyFlowCondition</td>
+                        <td>Expresión que verifica campos por step</td>
+                    </tr>
+                    <tr>
+                        <td><code>_create_targeted_prompt()</code></td>
+                        <td>Template dinámico</td>
+                        <td>CompanyFlowDefinition</td>
+                        <td>TxUserPromptTemplate con variables</td>
+                    </tr>
+                    <tr>
+                        <td><code>_generate_initial_message()</code></td>
+                        <td>Herramienta LLM</td>
+                        <td>CompanyFlowTool</td>
+                        <td>VcToolType = "llm_generation"</td>
+                    </tr>
+                    <tr>
+                        <td><code>process_ai_step()</code></td>
+                        <td>Configuración de paso</td>
+                        <td>CompanyFlowStep</td>
+                        <td>TxExecutionCondition + JsonStepConfig</td>
+                    </tr>
+                    <tr>
+                        <td><code>collected_data</code></td>
+                        <td>Estado del flujo</td>
+                        <td>CompanyFlowExecution</td>
+                        <td>JsonFlowState.collected_data</td>
+                    </tr>
+                    <tr>
+                        <td><code>conversation_history</code></td>
+                        <td>Historial de ejecución</td>
+                        <td>CompanyFlowExecution</td>
+                        <td>JsonFlowState.conversation_history</td>
+                    </tr>
+                    <tr>
+                        <td><code>boki_api.create_appointment()</code></td>
+                        <td>Herramienta API</td>
+                        <td>CompanyFlowTool</td>
+                        <td>VcToolType = "api_call"</td>
+                    </tr>
+                    <tr>
+                        <td>Step handlers mapping</td>
+                        <td>Orden de pasos</td>
+                        <td>CompanyFlowStep</td>
+                        <td>IStepOrder + TxExecutionCondition</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="note-box">
+            <h4>🚀 Ventajas de Esta Migración</h4>
+            <div class="code-snippet">
+# ANTES: Hardcoded en Python
+def _determine_next_step(self, collected_data: Dict) -> str:
+    if collected_data.get("ServiceId") is None:
+        return "waiting_service"
+    elif collected_data.get("ProfessionalId") is None:
+        return "waiting_professional"
+    # ... más lógica hardcodeada
+
+# DESPUÉS: Dinámico desde BD
+SELECT VcConditionKey FROM CompanyFlowCondition 
+WHERE TxConditionExpression = 
+'$flowInfo.currentData.ServiceId == null' 
+AND BIsActive = true;
+            </div>
+            <p><strong>Resultado:</strong> El mismo comportamiento, pero 100% configurable sin tocar código.</p>
+        </div>
+
+        <!-- Scripts de Migración -->
+        <div class="table-section">
+            <div class="table-title">
+                💾 Scripts SQL de Migración
+            </div>
+            <div class="table-description">
+                Scripts SQL para crear estos registros en tu base de datos actual.
+            </div>
+            <div class="code-snippet">
+-- 1. Actualizar CompanyAgent existente para AI Flow
+UPDATE CompanyAgents SET 
+    VcAgentType = 'flow_orchestrator',
+    BIsFlowOrchestrator = true,
+    TxUnifiedPromptTemplate = 'Eres un asistente virtual de una clínica de belleza...',
+    JsonPromptVariables = '{"llm_context": "...", "collected_data": "...", "conversation_history": "..."}'
+WHERE Id = 1 AND CompanyId = 1;
+
+-- 2. Insertar CompanyFlowDefinition
+INSERT INTO CompanyFlowDefinition (CompanyId, AgentId, VcFlowName, VcDisplayName, TxSystemPrompt, TxUserPromptTemplate, JsonFlowConfig, BIsActive)
+VALUES (1, 1, 'ai_appointment', 'Agendamiento con IA', 
+    'Eres un asistente virtual de agendamiento de citas...',
+    '{{ current_step == "initial" ? "Generar mensaje inicial..." : "" }}...',
+    '{"max_retries": 3, "temperature": 0.4, "fallback_enabled": true}',
+    true);
+
+-- 3. Insertar pasos del flujo
+INSERT INTO CompanyFlowStep (FlowDefinitionId, VcStepKey, VcStepName, IStepOrder, TxExecutionCondition, TxStepOutput, JsonExpectedData, JsonStepConfig, BIsActive)
+VALUES 
+(1, 'initial', 'Inicialización del Flujo', 1, '$flowInfo.currentStep === "initial"', '{{ _generate_initial_message() }}', '{"extract_fields": ["ClientId"]}', '{"use_ai_generation": true}', true),
+(1, 'waiting_service', 'Selección de Servicio', 2, '$flowInfo.currentData.ServiceId == null', 'Analiza si el usuario menciona un servicio...', '{"extract_fields": ["ServiceId"]}', '{"auto_advance_when_complete": true}', true),
+-- ... más pasos
+
+-- 4. Insertar condiciones
+INSERT INTO CompanyFlowCondition (FlowDefinitionId, VcConditionKey, VcConditionName, TxConditionExpression, VcConditionType, BIsActive)
+VALUES
+(1, 'allDataComplete', 'Todos los datos están completos', '$flowInfo.hasServiceId && $flowInfo.hasProfessionalId && $flowInfo.hasDateTime', 'completion_check', true),
+-- ... más condiciones
+
+-- 5. Insertar herramientas
+INSERT INTO CompanyFlowTool (FlowDefinitionId, VcToolType, VcToolName, JsonToolConfig, TxUsageCondition, BIsActive)
+VALUES 
+(1, 'llm_generation', 'Generate Initial Message', '{"method": "generate_response", "max_tokens": 200}', '$flowInfo.currentStep === "initial"', true),
+-- ... más herramientas
+            </div>
+        </div>
+    </div>
+</body>
+</html>
