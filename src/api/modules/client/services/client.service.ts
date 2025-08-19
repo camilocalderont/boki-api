@@ -33,12 +33,12 @@ export class ClientService extends BaseCrudService<ClientEntity, CreateClientDto
         //     where: { VcEmail: createClientDto.VcEmail }
         // });
 
-        const existingClientByIdentification = await this.clientRepository.findOne({
-            where: { VcIdentificationNumber: createClientDto.VcIdentificationNumber }
+        const existingClientByIdentificationAndCompany = await this.clientRepository.findOne({
+            where: { VcIdentificationNumber: createClientDto.VcIdentificationNumber, CompanyId: createClientDto.CompanyId }
         });
 
-        const existingClientByPhone = await this.clientRepository.findOne({
-            where: { VcPhone: createClientDto.VcPhone }
+        const existingClientByPhoneAndCompany = await this.clientRepository.findOne({
+            where: { VcPhone: createClientDto.VcPhone, CompanyId: createClientDto.CompanyId }
         });
 
         const errors: ApiErrorItem[] = [];
@@ -59,18 +59,18 @@ export class ClientService extends BaseCrudService<ClientEntity, CreateClientDto
         //     });
         // }
 
-        if (existingClientByPhone) {
+        if (existingClientByPhoneAndCompany) {
             errors.push({
                 code: 'PHONE_ALREADY_EXISTS',
-                message: 'Ya existe un cliente con este número de teléfono.',
+                message: 'Ya existe un cliente con este número de teléfono en la compañía.',
                 field: 'VcPhone'
             });
         }
 
-        if (existingClientByIdentification) {
+        if (existingClientByIdentificationAndCompany) {
             errors.push({
                 code: 'IDENTIFICATION_NUMBER_ALREADY_EXISTS',
-                message: 'Ya existe un cliente con este número de identificación.',
+                message: 'Ya existe un cliente con este número de identificación en la compañía.',
                 field: 'VcIdentificationNumber'
             });
         }
