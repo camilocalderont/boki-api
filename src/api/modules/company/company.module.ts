@@ -7,10 +7,15 @@ import { CompanyBlockedTimeEntity } from './entities/companyBlockedTime.entity';
 import { CompanyBlockedTimeController } from './controllers/companyBlockedTime.controller';
 import { CompanyBlockedTimeService } from './services/companyBlockedTime.service';
 import { CompanyBlockedTimeRepository } from './repositories/companyBlockedTime.repository';
+import { UsersEntity } from '../users/entities/users.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([CompanyEntity, CompanyBlockedTimeEntity]),
+    TypeOrmModule.forFeature([
+      CompanyEntity, 
+      CompanyBlockedTimeEntity,
+      UsersEntity 
+    ]),
   ],
   controllers: [CompanyController, CompanyBlockedTimeController],
   providers: [

@@ -11,7 +11,7 @@
     "dev": "tsx ./src/app.ts",
     "build": "npx rollup -c",
     "typeorm": "typeorm-ts-node-commonjs",
-    "migration:generate": "npm run typeorm -- migration:generate -d src/api/database/database.module.ts --path src/api/database/migrations --name",
+    "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/api/database/database.module.ts",
     "migration:run": "npm run typeorm -- migration:run -d src/api/database/database.module.ts",
     "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/api/database/database.module.ts",
     "setup": "npm install && npm run migration:run && npm run build",

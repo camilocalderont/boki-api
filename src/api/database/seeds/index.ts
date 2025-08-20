@@ -12,6 +12,7 @@ import { clientSeed } from './client.seed';
 import { faqsTagsSeed } from './faqstags.seed';
 import { faqsSeed } from './faqs.seed';
 import { companyFlowSeed } from './companyFlow.seed';
+import { userSeed } from './users.seed';
 
 export const runSeeds = async (dataSource: DataSource): Promise<void> => {
     if (!dataSource.isInitialized) {
@@ -20,6 +21,7 @@ export const runSeeds = async (dataSource: DataSource): Promise<void> => {
 
     // eslint-disable-next-line no-useless-catch
     try {
+        await userSeed(dataSource); 
         await statesSeed(dataSource);
         await tagsSeed(dataSource);
         await companySeed(dataSource);

@@ -7,4 +7,5 @@ export class CreateCompanyDto {
   VcLegalRepresentative?: string;
   TxLogo?: string;
   TxImages?: string;
+  UserId: number;
 }

@@ -5,6 +5,7 @@ import { UsersEntity } from '../entities/users.entity';
 import { CreateUsersDto } from '../dto/usersCreate.dto';
 import { UsersRepository } from '../repositories/users.repository';
 import { UpdateUsersDto } from '../dto/usersUpdate.dto';
+import { CompanyEntity } from '../../company/entities/company.entity';
 import * as bcrypt from 'bcrypt';
 import { BaseCrudService } from '../../../shared/services/crud.services';
 import { ApiErrorItem } from '~/api/shared/interfaces/api-response.interface';
@@ -19,6 +20,7 @@ export class UsersService extends BaseCrudService<UsersEntity, CreateUsersDto, U
     ) {
         super(usersEntityRepository);
     }
+    
     protected async validateCreate(createUsersDto: CreateUsersDto): Promise<void> {
         const errors: ApiErrorItem[] = [];
         
@@ -188,5 +190,29 @@ export class UsersService extends BaseCrudService<UsersEntity, CreateUsersDto, U
                 'Ha ocurrido un error inesperado'
             );
         }
+    }
+
+    // MÉTODOS CON COMPANIES
+
+    async findUserWithCompanies(userId: number): Promise<UsersEntity> {
+        const user = await this.usersEntityRepository.findOne({
+            where: { Id: userId },
+            relations: ['Companies'] // Carga la relación con Companies
+        });
+
+        if (!user) {
+            throw new NotFoundException([{
+                code: 'USUARIO_NO_EXISTE',
+                message: `El usuario con ID ${userId} no existe`,
+                field: 'id'
+            }], `El usuario con ID ${userId} no existe`);
+        }
+
+        return user;
+    }
+
+    async getUserCompanies(userId: number): Promise<CompanyEntity[]> {
+        const user = await this.findUserWithCompanies(userId);
+        return user.Companies || [];
     }
 }

@@ -1,10 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { ServiceEntity } from '../../service/entities/service.entity';
 import { CompanyBlockedTimeEntity } from './companyBlockedTime.entity';
 import { CategoryServiceEntity } from '../../categoryService/entities/categoryService.entity';
 import { ClientEntity } from '../../client/entities/client.entity';
 import { CompanyWhatsappSettingEntity } from '../../llm/entities/companyWhatsappSetting.entity';
 import { CompanyFlowDefinitionEntity } from '../../llm/entities/companyFlowDefinition.entity';
+import { UsersEntity } from '../../users/entities/users.entity';
 
 @Entity('Company')
 export class CompanyEntity {
@@ -38,11 +39,18 @@ export class CompanyEntity {
     @Column({ name: 'tx_images', type: 'text', nullable: true })
     TxImages?: string;
 
+    @Column({ name: 'user_id', type: 'int', nullable: false })
+    UserId: number;
+
     @CreateDateColumn({ name: 'created_at' })
     created_at: Date;
 
     @UpdateDateColumn({ name: 'updated_at' })
     updated_at: Date;
+
+    @ManyToOne(() => UsersEntity, user => user.Companies)
+    @JoinColumn({ name: 'user_id' })
+    User: UsersEntity;
 
     @OneToMany(() => ServiceEntity, service => service.Company)
     Services: ServiceEntity[];

@@ -7,4 +7,5 @@ export class UpdateCompanyDto {
   VcLegalRepresentative?: string;
   TxLogo?: string;
   TxImages?: string;
+  UserId?: number;
 }

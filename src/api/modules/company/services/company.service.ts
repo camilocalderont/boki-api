@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { CompanyEntity } from '../entities/company.entity';
 import { CreateCompanyDto } from '../dto/companyCreate.dto';
 import { UpdateCompanyDto } from '../dto/companyUpdate.dto';
+import { UsersEntity } from '../../users/entities/users.entity';
 import { BaseCrudService } from '../../../shared/services/crud.services';
 import { ApiErrorItem } from '~/api/shared/interfaces/api-response.interface';
 
@@ -11,23 +12,39 @@ import { ApiErrorItem } from '~/api/shared/interfaces/api-response.interface';
 export class CompanyService extends BaseCrudService<CompanyEntity, CreateCompanyDto, UpdateCompanyDto> {
     constructor(
         @InjectRepository(CompanyEntity)
-        private readonly companyRepository: Repository<CompanyEntity>
+        private readonly companyRepository: Repository<CompanyEntity>,
+        @InjectRepository(UsersEntity)
+        private readonly usersRepository: Repository<UsersEntity>
     ) {
         super(companyRepository);
     }
 
     protected async validateCreate(createCompanyDto: CreateCompanyDto): Promise<void> {
+        const errors: ApiErrorItem[] = [];
+
+        // Validación existente: verificar email único
         const existingCompany = await this.companyRepository.findOne({
             where: { VcPrincipalEmail: createCompanyDto.VcPrincipalEmail }
         });
-
-        const errors: ApiErrorItem[] = [];
 
         if (existingCompany) {
             errors.push({
                 code: 'Ya_existe_empresa',
                 message: 'Ya existe una empresa con estos datos',
                 field: 'company'
+            });
+        }
+
+        // validación: verificar que el UserId existe
+        const userExists = await this.usersRepository.findOne({
+            where: { Id: createCompanyDto.UserId }
+        });
+
+        if (!userExists) {
+            errors.push({
+                code: 'USUARIO_NO_EXISTE',
+                message: `El usuario con ID ${createCompanyDto.UserId} no existe`,
+                field: 'UserId'
             });
         }
 
@@ -66,6 +83,7 @@ export class CompanyService extends BaseCrudService<CompanyEntity, CreateCompany
     protected async validateUpdate(id: number, updateCompanyDto: UpdateCompanyDto): Promise<void> {
         const errors: ApiErrorItem[] = [];
         let company: CompanyEntity;
+        
         try {
             company = await this.findOne(id);
         } catch (error) {
@@ -81,6 +99,7 @@ export class CompanyService extends BaseCrudService<CompanyEntity, CreateCompany
             throw error;
         }
 
+        // Validación existente: verificar email único si se está cambiando
         if (updateCompanyDto.VcPrincipalEmail && updateCompanyDto.VcPrincipalEmail !== company.VcPrincipalEmail) {
             const existingCompany = await this.companyRepository.findOne({
                 where: { VcPrincipalEmail: updateCompanyDto.VcPrincipalEmail }
@@ -93,10 +112,25 @@ export class CompanyService extends BaseCrudService<CompanyEntity, CreateCompany
                     field: 'company'
                 });
             }
+        }
 
-            if (errors.length > 0) {
-                throw new ConflictException(errors, "Error en la actualización de empresa");
+        // validación: verificar que el UserId existe si se está cambiando
+        if (updateCompanyDto.UserId && updateCompanyDto.UserId !== company.UserId) {
+            const userExists = await this.usersRepository.findOne({
+                where: { Id: updateCompanyDto.UserId }
+            });
+
+            if (!userExists) {
+                errors.push({
+                    code: 'USUARIO_NO_EXISTE',
+                    message: `El usuario con ID ${updateCompanyDto.UserId} no existe`,
+                    field: 'UserId'
+                });
             }
+        }
+
+        if (errors.length > 0) {
+            throw new ConflictException(errors, "Error en la actualización de empresa");
         }
     }
 

@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { CompanyEntity } from './company.entity';
 
 @Entity('CompanyBlockedTime')
@@ -25,5 +25,6 @@ export class CompanyBlockedTimeEntity {
     updated_at: Date;
 
     @ManyToOne(() => CompanyEntity, company => company.CompanyBlockedTimes)
+    @JoinColumn({ name: 'company_id' })
     Company: CompanyEntity;
 }

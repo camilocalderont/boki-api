@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { CompanyEntity } from '../../company/entities/company.entity';
 
 @Entity('Users')
 export class UsersEntity {
@@ -37,4 +38,7 @@ export class UsersEntity {
 
     @UpdateDateColumn({ name: 'updated_at' })
     updated_at: Date;
+
+    @OneToMany(() => CompanyEntity, company => company.User)
+    Companies: CompanyEntity[];
 }
