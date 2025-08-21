@@ -39,8 +39,21 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
 
     protected async validateCreate(createProfessionalDto: CreateProfessionalDto): Promise<void> {
         const errors: ApiErrorItem[] = [];
+
+        const company = await this.dataSource.getRepository('Company').findOne({
+            where: { Id: createProfessionalDto.CompanyId }
+        });
+
+        if (!company) {
+            errors.push({
+                code: 'COMPANY_NO_EXISTE',
+                message: 'La compañía especificada no existe.',
+                field: 'CompanyId'
+            });
+        }
+
         const existingEmail = await this.professionalTypeOrmRepo.findOne({
-            where: { VcEmail: createProfessionalDto.VcEmail }
+            where: { VcEmail: createProfessionalDto.VcEmail, CompanyId: createProfessionalDto.CompanyId }
         });
 
         if (existingEmail) {
@@ -52,7 +65,7 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
         }
 
         const existingId = await this.professionalTypeOrmRepo.findOne({
-            where: { VcIdentificationNumber: createProfessionalDto.VcIdentificationNumber }
+            where: { VcIdentificationNumber: createProfessionalDto.VcIdentificationNumber, CompanyId: createProfessionalDto.CompanyId }
         });
 
         if (existingId) {
@@ -176,15 +189,33 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
             throw error;
         }
 
-        if (updateProfessionalDto.VcEmail && updateProfessionalDto.VcEmail !== professional.VcEmail) {
-            const existingEmail = await this.professionalTypeOrmRepo.findOne({
-                where: { VcEmail: updateProfessionalDto.VcEmail }
+        if (updateProfessionalDto.CompanyId && updateProfessionalDto.CompanyId !== professional.CompanyId) {
+            const company = await this.dataSource.getRepository('Company').findOne({
+                where: { Id: updateProfessionalDto.CompanyId }
             });
 
-            if (existingEmail) {
+            if (!company) {
                 errors.push({
-                    code: 'EMAIL_YA_EXISTE',
-                    message: 'Ya existe un profesional con este correo electrónico.',
+                    code: 'COMPANY_NO_EXISTE',
+                    message: 'La compañía especificada no existe.',
+                    field: 'CompanyId'
+                });
+            }
+        }
+
+        if (updateProfessionalDto.VcEmail && updateProfessionalDto.VcEmail !== professional.VcEmail) {
+            const companyId = updateProfessionalDto.CompanyId || professional.CompanyId;
+            const existingEmail = await this.professionalTypeOrmRepo.findOne({
+                where: {
+                    VcEmail: updateProfessionalDto.VcEmail,
+                    CompanyId: companyId
+                }
+            });
+
+            if (existingEmail && existingEmail.Id !== id) {
+                errors.push({
+                    code: 'EMAIL_YA_EXISTE_EN_COMPANY',
+                    message: 'Ya existe un profesional con este correo electrónico en esta compañía.',
                     field: 'VcEmail'
                 });
             }
@@ -192,14 +223,18 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
 
         if (updateProfessionalDto.VcIdentificationNumber &&
             updateProfessionalDto.VcIdentificationNumber !== professional.VcIdentificationNumber) {
+            const companyId = updateProfessionalDto.CompanyId || professional.CompanyId;
             const existingId = await this.professionalTypeOrmRepo.findOne({
-                where: { VcIdentificationNumber: updateProfessionalDto.VcIdentificationNumber }
+                where: {
+                    VcIdentificationNumber: updateProfessionalDto.VcIdentificationNumber,
+                    CompanyId: companyId
+                }
             });
 
-            if (existingId) {
+            if (existingId && existingId.Id !== id) {
                 errors.push({
-                    code: 'IDENTIFICACION_YA_EXISTE',
-                    message: 'Ya existe un profesional con este número de identificación.',
+                    code: 'IDENTIFICACION_YA_EXISTE_EN_COMPANY',
+                    message: 'Ya existe un profesional con este número de identificación en esta compañía.',
                     field: 'VcIdentificationNumber'
                 });
             }
@@ -322,6 +357,40 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
             );
         } finally {
             await queryRunner.release();
+        }
+    }
+
+    async findByCompanyId(companyId: number): Promise<ProfessionalEntity[]> {
+        try {
+            const professionals = await this.professionalTypeOrmRepo.find({
+                where: { CompanyId: companyId },
+                relations: ['Services', 'BussinessHours']
+            });
+
+            if (!professionals || professionals.length === 0) {
+                throw new NotFoundException([
+                    {
+                        code: 'PROFESIONALES_NO_ENCONTRADOS',
+                        message: `No se encontraron profesionales para la compañía con ID: ${companyId}`,
+                        field: 'CompanyId'
+                    }
+                ], `No se encontraron profesionales para la compañía con ID: ${companyId}`);
+            }
+
+            return professionals;
+        } catch (error) {
+            if (error instanceof NotFoundException) {
+                throw error;
+            }
+
+            throw new BadRequestException(
+                [{
+                    code: 'ERROR_BUSQUEDA_PROFESIONALES',
+                    message: `Ha ocurrido un error al buscar profesionales por compañía: ${error.message || 'Error desconocido'}`,
+                    field: 'CompanyId'
+                }],
+                'Ha ocurrido un error al buscar profesionales por compañía'
+            );
         }
     }
 
@@ -700,7 +769,7 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
             : String(time).slice(0, 5);
         const [h, m] = ts.split(':').map(Number);
         return set(base, { hours: h, minutes: m, seconds: 0, milliseconds: 0 });
-    }  
+    }
 
     private formatTime(date: Date): string {
         const h = date.getHours();
@@ -718,7 +787,7 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
             for (const professional of professionals) {
                 const fullName = `${professional.VcFirstName}${professional.VcSecondName ? ' ' + professional.VcSecondName : ''} ${professional.VcFirstLastName}${professional.VcSecondLastName ? ' ' + professional.VcSecondLastName : ''}`;
                 const generalAvailability = await this.findGeneralAvailability(professional.Id, startDate);
-                
+
                 const availability = [];
 
                 for (const dayAvailability of generalAvailability) {
@@ -730,7 +799,7 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
                         ...(slots.mañana || []),
                         ...(slots.tarde || []),
                         ...(slots.noche || [])
-                    ]; 
+                    ];
 
                     if (allHours.length > 0) {
                         availability.push({
@@ -754,7 +823,7 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
         } catch (error) {
             console.error('Error en findByServiceIdForLLM:', error);
             console.error('Error stack:', error.stack);
-            
+
             if (error instanceof NotFoundException || error instanceof BadRequestException) {
                 throw error;
             }
@@ -786,24 +855,24 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
 
             for (const professional of professionals) {
                 const fullName = `${professional.VcFirstName}${professional.VcSecondName ? ' ' + professional.VcSecondName : ''} ${professional.VcFirstLastName}${professional.VcSecondLastName ? ' ' + professional.VcSecondLastName : ''}`;
-                
+
                 // Obtener servicios del profesional para esta compañía
                 const services = professional.Services
                     .filter(ps => ps.Service.CompanyId === companyId)
                     .map(ps => ps.Service);
-                
+
                 const serviceNames = services.map(service => service.VcName);
                 const serviceIds = services.map(service => service.Id);
 
                 const generalAvailability = await this.findGeneralAvailability(professional.Id, startDate);
-                
+
                 const availability = [];
 
                 for (const dayAvailability of generalAvailability) {
                     if (availability.length >= 5) break;
                     const dia = dayAvailability.fecha;
                     const fechaCompleta = dayAvailability.fechaCompleta;
-                    
+
                     // Para obtener disponibilidad general, usamos el primer servicio como referencia
                     let allHours = [];
                     if (services.length > 0) {
@@ -839,7 +908,7 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
         } catch (error) {
             console.error('Error en findByCompanyIdForLLM:', error);
             console.error('Error stack:', error.stack);
-            
+
             if (error instanceof NotFoundException || error instanceof BadRequestException) {
                 throw error;
             }

@@ -14,6 +14,7 @@ export class UpdateProfessionalDto {
   TxPhoto?: string;
   VcProfession?: string;
   VcSpecialization?: string;
+  CompanyId?: number;
   BussinessHours?: UpdateProfessionalBussinessHourDto[];
   Services?: UpdateProfessionalServiceDto[];
 }

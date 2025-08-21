@@ -1,7 +1,8 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { ProfessionalServiceEntity } from './professionalService.entity';
 import { ProfessionalBussinessHourEntity } from './professionalBussinessHour.entity';
 import { AppointmentEntity } from '../../appointment/entities/appointment.entity';
+import { CompanyEntity } from '../../company/entities/company.entity';
 
 @Entity('Professional')
 export class ProfessionalEntity {
@@ -44,11 +45,18 @@ export class ProfessionalEntity {
     @Column({ name: 'vc_specialization', type: 'varchar', length: 100, nullable: true })
     VcSpecialization?: string;
 
+    @Column({ name: 'company_id', type: 'int', nullable: false })
+    CompanyId: number;
+
     @CreateDateColumn({ name: 'created_at' })
     created_at: Date;
 
     @UpdateDateColumn({ name: 'updated_at' })
     updated_at: Date;
+
+    @ManyToOne(() => CompanyEntity, company => company.Professionals)
+    @JoinColumn({ name: 'company_id' })
+    Company: CompanyEntity;
 
     @OneToMany(() => ProfessionalServiceEntity, professionalService => professionalService.Professional)
     Services: ProfessionalServiceEntity[];

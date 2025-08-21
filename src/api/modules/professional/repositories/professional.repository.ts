@@ -11,7 +11,7 @@ export class ProfessionalRepository implements ICrudRepository<ProfessionalEntit
     constructor(
         @InjectRepository(ProfessionalEntity)
         private readonly professionalRepository: Repository<ProfessionalEntity>
-    ) {}
+    ) { }
 
     async findAll(filters?: Record<string, any>): Promise<ProfessionalEntity[]> {
         return await this.professionalRepository.find(filters ? { where: filters } : undefined);
@@ -40,7 +40,7 @@ export class ProfessionalRepository implements ICrudRepository<ProfessionalEntit
         const result = await this.professionalRepository.delete(id);
         return result.affected > 0;
     }
-    
+
     async remove(id: number): Promise<void> {
         const entity = await this.findOne(id);
         if (!entity) {
@@ -77,7 +77,7 @@ export class ProfessionalRepository implements ICrudRepository<ProfessionalEntit
             .orderBy('bussinessHour.IDayOfWeek', 'ASC')
             .addOrderBy('bussinessHour.TStartTime', 'ASC')
             .getOne();
-        
+
         if (!bussinessHours || !bussinessHours.BussinessHours || bussinessHours.BussinessHours.length === 0) {
             return [];
         }
@@ -89,14 +89,14 @@ export class ProfessionalRepository implements ICrudRepository<ProfessionalEntit
         return bussinessHours.BussinessHours.map(hour => {
             const formatTime = (time: any): string => {
                 if (!time) return null;
-                
+
                 if (typeof time === 'string') {
                     const parts = time.split(':');
                     if (parts.length >= 2) {
                         return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
                     }
                 }
-                
+
                 if (time instanceof Date) {
                     try {
                         const hours = time.getHours().toString().padStart(2, '0');
@@ -106,15 +106,15 @@ export class ProfessionalRepository implements ICrudRepository<ProfessionalEntit
                         return null;
                     }
                 }
-                
+
                 try {
                     const timeStr = String(time);
                     const matches = timeStr.match(/(\d{1,2}):(\d{2})/);
                     if (matches && matches.length >= 3) {
                         return `${matches[1].padStart(2, '0')}:${matches[2].padStart(2, '0')}`;
                     }
-                } catch (e) {}
-                
+                } catch (e) { }
+
                 return null;
             };
 
@@ -175,7 +175,7 @@ export class ProfessionalRepository implements ICrudRepository<ProfessionalEntit
                 'appointment.ProfessionalId = professional.Id'
             )
             .where('professional.Id = :professionalId', { professionalId })
-            .andWhere('DATE(appointment.DtDate) = DATE(:date)', { 
+            .andWhere('DATE(appointment.DtDate) = DATE(:date)', {
                 date: date.toISOString().split('T')[0]
             })
             .getOne();
@@ -192,16 +192,16 @@ export class ProfessionalRepository implements ICrudRepository<ProfessionalEntit
         for (const schedule of daySchedules) {
             const startTime = this.convertTimeToMinutes(schedule.TStartTime);
             const endTime = this.convertTimeToMinutes(schedule.TEndTime);
-            
-            const breakStartTime = schedule.TBreakStartTime ? 
+
+            const breakStartTime = schedule.TBreakStartTime ?
                 this.convertTimeToMinutes(schedule.TBreakStartTime) : null;
-            const breakEndTime = schedule.TBreakEndTime ? 
+            const breakEndTime = schedule.TBreakEndTime ?
                 this.convertTimeToMinutes(schedule.TBreakEndTime) : null;
 
             const timeSlots = this.generateTimeSlots(
-                startTime, 
-                endTime, 
-                serviceDuration, 
+                startTime,
+                endTime,
+                serviceDuration,
                 existingAppointments,
                 breakStartTime,
                 breakEndTime
@@ -210,7 +210,7 @@ export class ProfessionalRepository implements ICrudRepository<ProfessionalEntit
             for (const slot of timeSlots) {
                 const slotDate = new Date(date);
                 slotDate.setHours(Math.floor(slot / 60), slot % 60, 0, 0);
-                
+
                 const endSlotDate = new Date(slotDate);
                 endSlotDate.setMinutes(endSlotDate.getMinutes() + serviceDuration);
 
@@ -227,8 +227,8 @@ export class ProfessionalRepository implements ICrudRepository<ProfessionalEntit
         }
 
         availableSlots.sort((a, b) => {
-            return this.convertTimeStringToMinutes(a.horaInicio) - 
-                   this.convertTimeStringToMinutes(b.horaInicio);
+            return this.convertTimeStringToMinutes(a.horaInicio) -
+                this.convertTimeStringToMinutes(b.horaInicio);
         });
 
         return availableSlots;
@@ -236,25 +236,25 @@ export class ProfessionalRepository implements ICrudRepository<ProfessionalEntit
 
     private convertTimeStringToMinutes(timeString: string): number {
         if (!timeString) return 0;
-        
+
         const parts = timeString.split(':');
         if (parts.length < 2) return 0;
-        
+
         const hours = parseInt(parts[0], 10);
         const minutes = parseInt(parts[1], 10);
-        
+
         if (isNaN(hours) || isNaN(minutes)) return 0;
-        
+
         return hours * 60 + minutes;
     }
 
     private convertTimeToMinutes(time: any): number {
         if (!time) return 0;
-        
+
         if (typeof time === 'string') {
             return this.convertTimeStringToMinutes(time);
         }
-        
+
         if (time instanceof Date) {
             try {
                 return time.getHours() * 60 + time.getMinutes();
@@ -262,7 +262,7 @@ export class ProfessionalRepository implements ICrudRepository<ProfessionalEntit
                 return 0;
             }
         }
-        
+
         try {
             const timeStr = String(time);
             const matches = timeStr.match(/(\d{1,2}):(\d{2})/);
@@ -271,8 +271,8 @@ export class ProfessionalRepository implements ICrudRepository<ProfessionalEntit
                 const minutes = parseInt(matches[2], 10);
                 return hours * 60 + minutes;
             }
-        } catch (e) {}
-        
+        } catch (e) { }
+
         return 0;
     }
 
@@ -283,9 +283,9 @@ export class ProfessionalRepository implements ICrudRepository<ProfessionalEntit
     }
 
     private generateTimeSlots(
-        startTime: number, 
-        endTime: number, 
-        serviceDuration: number, 
+        startTime: number,
+        endTime: number,
+        serviceDuration: number,
         appointments: any[],
         breakStartTime: number | null,
         breakEndTime: number | null
@@ -323,4 +323,12 @@ export class ProfessionalRepository implements ICrudRepository<ProfessionalEntit
 
         return slots;
     }
+
+    async findByCompanyId(companyId: number): Promise<ProfessionalEntity[]> {
+        return await this.professionalRepository.find({
+            where: { CompanyId: companyId },
+            relations: ['Company', 'Services', 'BussinessHours']
+        });
+    }
+
 }

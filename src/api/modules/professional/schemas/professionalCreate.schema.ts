@@ -4,6 +4,7 @@ import { createProfessionalBussinessHourSchema } from './professionalBussinessHo
 import { createProfessionalServiceSchema } from './professionalServiceCreate.schema';
 
 export const createProfessionalSchema = Joi.object({
+  CompanyId: Joi.number().integer().required(),
   VcFirstName: Joi.string().min(3).max(100).required(),
   VcSecondName: Joi.string().min(3).max(100).allow('', null),
   VcFirstLastName: Joi.string().min(3).max(100).required(),

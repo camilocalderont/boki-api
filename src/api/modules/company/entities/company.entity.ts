@@ -6,6 +6,7 @@ import { ClientEntity } from '../../client/entities/client.entity';
 import { CompanyWhatsappSettingEntity } from '../../llm/entities/companyWhatsappSetting.entity';
 import { CompanyFlowDefinitionEntity } from '../../llm/entities/companyFlowDefinition.entity';
 import { UsersEntity } from '../../users/entities/users.entity';
+import { ProfessionalEntity } from '../../professional/entities/professional.entity';
 
 @Entity('Company')
 export class CompanyEntity {
@@ -51,6 +52,9 @@ export class CompanyEntity {
     @ManyToOne(() => UsersEntity, user => user.Companies)
     @JoinColumn({ name: 'user_id' })
     User: UsersEntity;
+
+    @OneToMany(() => ProfessionalEntity, professional => professional.Company)
+    Professionals: ProfessionalEntity[];
 
     @OneToMany(() => ServiceEntity, service => service.Company)
     Services: ServiceEntity[];

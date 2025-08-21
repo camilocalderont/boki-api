@@ -14,6 +14,7 @@ export class CreateProfessionalDto {
   TxPhoto?: string;
   VcProfession: string;
   VcSpecialization?: string;
+  CompanyId: number;
   BussinessHours?: CreateProfessionalBussinessHourDto[];
   Services?: CreateProfessionalServiceDto[];
 }
