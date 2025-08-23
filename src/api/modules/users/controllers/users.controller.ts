@@ -1,18 +1,20 @@
-import { Controller, Inject, ValidationPipe, UsePipes, Get, Post, Body, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Inject, ValidationPipe, UsePipes, Get, Post, Body, Param, ParseIntPipe, Request } from '@nestjs/common';
 import { UsersService } from '../services/users.service';
 import { UsersEntity } from '../entities/users.entity';
 import { CreateUsersDto } from '../dto/usersCreate.dto';
 import { UpdateUsersDto } from '../dto/usersUpdate.dto';
 import { LoginUsersDto } from '../dto/usersLogin.dto';
 import { CompanyEntity } from '../../company/entities/company.entity';
-import { LoginResponse } from '../interfaces/auth.interface';
+import { LoginResponse, TokenValidationResponse } from '../interfaces/auth.interface';
 import { BaseCrudController } from '../../../shared/controllers/crud.controller';
 import { createUsersSchema } from '../schemas/usersCreate.schema';
 import { updateUsersSchema } from '../schemas/usersUpdate.schema';
 import { loginUsersSchema } from '../schemas/usersLogin.schema';
 import { JoiValidationPipe } from '../../../shared/pipes/joi-validation.pipe';
 import { ApiControllerResponse } from '../../../shared/interfaces/api-response.interface';
-import { Public } from '../../../shared/decorators/public.decorator'; // ← NUEVO IMPORT
+import { Public } from '../../../shared/decorators/public.decorator';
+import { AuthenticatedRequest } from '../../../shared/guards/jwt-auth.guard';
+import * as jwt from 'jsonwebtoken';
 
 @Controller('users')
 @UsePipes(new ValidationPipe({
@@ -51,6 +53,30 @@ export class UsersController extends BaseCrudController<UsersEntity, CreateUsers
     };
   }
 
+  @Get('validate-token')
+  async validateToken(@Request() req: AuthenticatedRequest): Promise<ApiControllerResponse<TokenValidationResponse>> {
+    const token = this.extractTokenFromHeader(req);
+    const decodedToken = jwt.decode(token) as any;
+    
+    const now = Math.floor(Date.now() / 1000); 
+    const expiresIn = decodedToken.exp - now; 
+    const expiresInMinutes = Math.floor(expiresIn / 60); 
+    
+    return {
+      message: 'Token validado exitosamente',
+      data: {
+        isValid: true,
+        expiresAt: new Date(decodedToken.exp * 1000),
+        expiresIn: expiresIn,
+        expiresInMinutes: expiresInMinutes,
+        shouldRenew: expiresIn < 600,
+        user: {
+          userId: req.user.userId,
+          email: req.user.email    
+        }
+      }
+    };
+  }
 
   @Get(':id/companies')
   async getUserCompanies(@Param('id', ParseIntPipe) id: number): Promise<ApiControllerResponse<CompanyEntity[]>> {
@@ -68,5 +94,10 @@ export class UsersController extends BaseCrudController<UsersEntity, CreateUsers
       message: 'Usuario con empresas obtenido exitosamente',
       data: user
     };
+  }
+
+  private extractTokenFromHeader(request: any): string | undefined {
+    const [type, token] = request.headers.authorization?.split(' ') ?? [];
+    return type === 'Bearer' ? token : undefined;
   }
 }
