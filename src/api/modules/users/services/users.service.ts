@@ -1,11 +1,14 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException, Inject } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException, Inject, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { JwtService } from '@nestjs/jwt';
 import { UsersEntity } from '../entities/users.entity';
 import { CreateUsersDto } from '../dto/usersCreate.dto';
 import { UsersRepository } from '../repositories/users.repository';
 import { UpdateUsersDto } from '../dto/usersUpdate.dto';
+import { LoginUsersDto } from '../dto/usersLogin.dto';
 import { CompanyEntity } from '../../company/entities/company.entity';
+import { LoginResponse } from '../interfaces/auth.interface';
 import * as bcrypt from 'bcrypt';
 import { BaseCrudService } from '../../../shared/services/crud.services';
 import { ApiErrorItem } from '~/api/shared/interfaces/api-response.interface';
@@ -16,14 +19,15 @@ export class UsersService extends BaseCrudService<UsersEntity, CreateUsersDto, U
         @InjectRepository(UsersEntity)
         private readonly usersEntityRepository: Repository<UsersEntity>,
         @Inject(UsersRepository)
-        private readonly usersRepository: UsersRepository
+        private readonly usersRepository: UsersRepository,
+        @Inject(JwtService) private readonly jwtService: JwtService
     ) {
         super(usersEntityRepository);
     }
-    
+
     protected async validateCreate(createUsersDto: CreateUsersDto): Promise<void> {
         const errors: ApiErrorItem[] = [];
-        
+
         const existingUser = await this.usersEntityRepository.findOne({
             where: { VcEmail: createUsersDto.VcEmail }
         });
@@ -102,7 +106,7 @@ export class UsersService extends BaseCrudService<UsersEntity, CreateUsersDto, U
 
     protected async validateUpdate(id: number, updateUsersDto: UpdateUsersDto): Promise<void> {
         const errors: ApiErrorItem[] = [];
-        
+
         let users: UsersEntity;
         try {
             users = await this.findOne(id);
@@ -130,8 +134,8 @@ export class UsersService extends BaseCrudService<UsersEntity, CreateUsersDto, U
                 });
             }
         }
-        
-        if (updateUsersDto.VcIdentificationNumber && 
+
+        if (updateUsersDto.VcIdentificationNumber &&
             updateUsersDto.VcIdentificationNumber !== users.VcIdentificationNumber) {
             const existingId = await this.usersEntityRepository.findOne({
                 where: { VcIdentificationNumber: updateUsersDto.VcIdentificationNumber }
@@ -214,5 +218,74 @@ export class UsersService extends BaseCrudService<UsersEntity, CreateUsersDto, U
     async getUserCompanies(userId: number): Promise<CompanyEntity[]> {
         const user = await this.findUserWithCompanies(userId);
         return user.Companies || [];
+    }
+
+    // MÉTODOS DE AUTENTICACIÓN
+    async validateUserCredentials(email: string, password: string): Promise<UsersEntity | null> {
+        const user = await this.usersEntityRepository.findOne({
+            where: { VcEmail: email }
+        });
+
+        if (!user) {
+            return null;
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, user.VcPassword);
+
+        if (!isPasswordValid) {
+            return null;
+        }
+
+        return user;
+    }
+
+    async login(loginUsersDto: LoginUsersDto): Promise<LoginResponse> {
+        try {
+            const user = await this.validateUserCredentials(
+                loginUsersDto.VcEmail,
+                loginUsersDto.VcPassword
+            );
+
+            if (!user) {
+                throw new UnauthorizedException([{
+                    code: 'CREDENCIALES_INVALIDAS',
+                    message: 'Credenciales inválidas. Verifica tu email y contraseña.',
+                    field: 'credentials'
+                }], 'Credenciales inválidas');
+            }
+
+            // Generar token JWT - usa configuración del módulo (2h automático)
+            const payload = {
+                userId: user.Id,
+                email: user.VcEmail
+            };
+
+            const token = this.jwtService.sign(payload);
+
+            // Retornar respuesta con token y datos básicos del usuario
+            return {
+                token,
+                user: {
+                    Id: user.Id,
+                    VcEmail: user.VcEmail,
+                    VcFirstName: user.VcFirstName,
+                    VcFirstLastName: user.VcFirstLastName,
+                    VcNickName: user.VcNickName
+                }
+            };
+        } catch (error) {
+            if (error instanceof UnauthorizedException) {
+                throw error;
+            }
+
+            throw new BadRequestException(
+                [{
+                    code: 'ERROR_LOGIN',
+                    message: `Ha ocurrido un error durante el inicio de sesión: ${error.message || 'Error desconocido'}`,
+                    field: 'login'
+                }],
+                'Error durante el inicio de sesión'
+            );
+        }
     }
 }

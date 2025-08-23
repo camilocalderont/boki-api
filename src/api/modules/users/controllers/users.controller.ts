@@ -1,12 +1,16 @@
-import { Controller, Inject, ValidationPipe, UsePipes, Get, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Inject, ValidationPipe, UsePipes, Get, Post, Body, Param, ParseIntPipe } from '@nestjs/common';
 import { UsersService } from '../services/users.service';
 import { UsersEntity } from '../entities/users.entity';
 import { CreateUsersDto } from '../dto/usersCreate.dto';
 import { UpdateUsersDto } from '../dto/usersUpdate.dto';
+import { LoginUsersDto } from '../dto/usersLogin.dto';
 import { CompanyEntity } from '../../company/entities/company.entity';
+import { LoginResponse } from '../interfaces/auth.interface';
 import { BaseCrudController } from '../../../shared/controllers/crud.controller';
 import { createUsersSchema } from '../schemas/usersCreate.schema';
 import { updateUsersSchema } from '../schemas/usersUpdate.schema';
+import { loginUsersSchema } from '../schemas/usersLogin.schema';
+import { JoiValidationPipe } from '../../../shared/pipes/joi-validation.pipe';
 import { ApiControllerResponse } from '../../../shared/interfaces/api-response.interface';
 
 @Controller('users')
@@ -21,6 +25,18 @@ export class UsersController extends BaseCrudController<UsersEntity, CreateUsers
     private readonly usersService: UsersService
   ) {
     super(usersService, 'users', createUsersSchema, updateUsersSchema);
+  }
+  
+  @Post('login')
+  async login(
+    @Body(new JoiValidationPipe(loginUsersSchema)) loginUsersDto: LoginUsersDto
+  ): Promise<ApiControllerResponse<LoginResponse>> {
+    const loginResult = await this.usersService.login(loginUsersDto);
+    
+    return {
+      message: 'Inicio de sesión exitoso',
+      data: loginResult
+    };
   }
 
   @Get(':id/companies')
