@@ -12,6 +12,7 @@ import { updateUsersSchema } from '../schemas/usersUpdate.schema';
 import { loginUsersSchema } from '../schemas/usersLogin.schema';
 import { JoiValidationPipe } from '../../../shared/pipes/joi-validation.pipe';
 import { ApiControllerResponse } from '../../../shared/interfaces/api-response.interface';
+import { Public } from '../../../shared/decorators/public.decorator'; // ← NUEVO IMPORT
 
 @Controller('users')
 @UsePipes(new ValidationPipe({
@@ -26,7 +27,18 @@ export class UsersController extends BaseCrudController<UsersEntity, CreateUsers
   ) {
     super(usersService, 'users', createUsersSchema, updateUsersSchema);
   }
+
+  @Public() 
+  @Post()
+  async create(@Body() createUsersDto: CreateUsersDto): Promise<ApiControllerResponse<UsersEntity>> {
+    const user = await this.usersService.create(createUsersDto);
+    return {
+      message: 'Usuario creado exitosamente',
+      data: user
+    };
+  }
   
+  @Public() 
   @Post('login')
   async login(
     @Body(new JoiValidationPipe(loginUsersSchema)) loginUsersDto: LoginUsersDto
@@ -38,6 +50,7 @@ export class UsersController extends BaseCrudController<UsersEntity, CreateUsers
       data: loginResult
     };
   }
+
 
   @Get(':id/companies')
   async getUserCompanies(@Param('id', ParseIntPipe) id: number): Promise<ApiControllerResponse<CompanyEntity[]>> {
