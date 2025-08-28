@@ -21,6 +21,7 @@ import { TagsModule } from './modules/tags/tags.module';
 import { FaqsModule } from './modules/faqs/faqs.module';
 import { ConversationModule } from './modules/conversation/conversation.module';
 import { LlmModule } from './modules/llm/llm.module';
+import { HealthModule } from './modules/health/health.module';
 
 @Module({
   imports: [
@@ -36,9 +37,10 @@ import { LlmModule } from './modules/llm/llm.module';
       }),
       inject: [ConfigService],
     }),
-    
+
     TypeOrmModule.forRoot(AppDataSource.options),
     MongoDBModule,
+    HealthModule,
     ClientModule,
     CompanyModule,
     CompanyBranchModule,
@@ -60,7 +62,7 @@ import { LlmModule } from './modules/llm/llm.module';
       provide: APP_GUARD,
       useClass: ApiTokenGuard,
     },
-    // JWT Auth Guard 
+    // JWT Auth Guard
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,

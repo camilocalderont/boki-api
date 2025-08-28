@@ -1,7 +1,50 @@
-dist/*
+# Dependencias
 node_modules
-.env
+npm-debug.log*
 
-*_sessions
-*tokens
-.wwebjs*
+# Archivos de desarrollo
+.git
+.gitignore
+README.md
+.env
+.env.*
+
+# Archivos de IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de logs
+*.log
+logs
+baileys.log
+core.class.log
+queue.class.log
+
+# Archivos de build (se generarán en el contenedor)
+dist
+build
+
+# Archivos de test
+**/*.test.ts
+**/*.spec.ts
+coverage
+
+# Archivos temporales
+*.tmp
+*.temp
+bot.qr.png
+
+# Documentación
+documentacion
+BD
+
+# Docker
+docker-compose.yml
+Dockerfile
+.dockerignore

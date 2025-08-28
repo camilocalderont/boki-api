@@ -1,40 +1,57 @@
-# Image size ~ 400MB
+# Multi-stage build para optimizar el tamaño de la imagen
 FROM node:21-alpine3.18 as builder
 
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
-ENV PNPM_HOME=/usr/local/bin
-
-COPY . .
-
-COPY package*.json *-lock.yaml ./
-
+# Instalar dependencias del sistema necesarias para compilar
 RUN apk add --no-cache --virtual .gyp \
         python3 \
         make \
         g++ \
-    && apk add --no-cache git \
-    && pnpm install && pnpm run build \
-    && apk del .gyp
+    && apk add --no-cache git
 
-FROM node:21-alpine3.18 as deploy
+# Copiar archivos de configuración de dependencias
+COPY package*.json ./
+COPY tsconfig.json ./
+COPY rollup.config.js ./
+
+# Instalar dependencias
+RUN npm ci --only=production --ignore-scripts && \
+    npm ci --ignore-scripts
+
+# Copiar código fuente
+COPY src/ ./src/
+COPY assets/ ./assets/
+
+# Compilar la aplicación
+RUN npm run build && \
+    apk del .gyp
+
+# Etapa de producción
+FROM node:21-alpine3.18 as production
 
 WORKDIR /app
 
-ARG PORT
-ENV PORT $PORT
-EXPOSE $PORT
+# Crear usuario no-root
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S -u 1001 nodejs
 
-COPY --from=builder /app/assets ./assets
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/*.json /app/*-lock.yaml ./
+# Copiar archivos necesarios desde builder
+COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/assets ./assets
+COPY --from=builder --chown=nodejs:nodejs /app/package*.json ./
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
 
-RUN corepack enable && corepack prepare pnpm@latest --activate 
-ENV PNPM_HOME=/usr/local/bin
+# Variables de entorno por defecto
+ENV NODE_ENV=production
+ENV API_PORT=3000
+ENV API_VERSION=1
 
-RUN npm cache clean --force && pnpm install --production --ignore-scripts \
-    && addgroup -g 1001 -S nodejs && adduser -S -u 1001 nodejs \
-    && rm -rf $PNPM_HOME/.npm $PNPM_HOME/.node-gyp
+# Exponer el puerto
+EXPOSE 3000
 
+# Cambiar al usuario no-root
+USER nodejs
+
+# Comando de inicio
 CMD ["npm", "start"]
