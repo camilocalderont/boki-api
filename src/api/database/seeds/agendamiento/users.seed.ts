@@ -1,10 +1,10 @@
 import { DataSource } from 'typeorm';
-import { UsersEntity } from '../../modules/users/entities/users.entity';
+import { UsersEntity } from '../../../modules/users/entities/users.entity';
 import * as bcrypt from 'bcrypt';
 
 export const userSeed = async (dataSource: DataSource): Promise<void> => {
     const userRepository = dataSource.getRepository(UsersEntity);
-    
+
     // Verificar si ya existen datos
     const existingUsers = await userRepository.find();
     if (existingUsers.length > 0) {

@@ -1,9 +1,9 @@
 import { DataSource } from 'typeorm';
-import { CompanyEntity } from '../../modules/company/entities/company.entity';
+import { CompanyEntity } from '../../../modules/company/entities/company.entity';
 
 export const companySeed = async (dataSource: DataSource): Promise<void> => {
     const companyRepository = dataSource.getRepository(CompanyEntity);
-    
+
     const existingCompanies = await companyRepository.find();
     if (existingCompanies.length > 0) {
         return;

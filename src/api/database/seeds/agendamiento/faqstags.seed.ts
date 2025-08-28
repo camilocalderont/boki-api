@@ -1,5 +1,5 @@
 import { DataSource } from 'typeorm';
-import { FaqsTagsEntity } from '../../modules/faqs/entities/faqs-tags.entity'; // Ajusta la ruta a tu entidad FaqsTags
+import { FaqsTagsEntity } from '../../../modules/faqs/entities/faqs-tags.entity'; // Ajusta la ruta a tu entidad FaqsTags
 
 // Helper function para mapear IDs viejos (101+) a nuevos (1+)
 const mapOldTagIdToNew = (oldId: number): number => oldId - 100;

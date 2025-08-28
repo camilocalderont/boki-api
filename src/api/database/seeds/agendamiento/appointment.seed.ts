@@ -1,13 +1,13 @@
 import { DataSource } from 'typeorm';
-import { AppointmentEntity } from '../../modules/appointment/entities/appointment.entity';
-import { AppointmentStateEntity } from '../../modules/appointment/entities/appointmentState.entity';
-import { AppointmentStageEntity } from '../../modules/appointment/entities/appointmentStage.entity';
+import { AppointmentEntity } from '../../../modules/appointment/entities/appointment.entity';
+import { AppointmentStateEntity } from '../../../modules/appointment/entities/appointmentState.entity';
+import { AppointmentStageEntity } from '../../../modules/appointment/entities/appointmentStage.entity';
 
 export const appointmentSeed = async (dataSource: DataSource): Promise<void> => {
     const appointmentRepository = dataSource.getRepository(AppointmentEntity);
     const appointmentStateRepository = dataSource.getRepository(AppointmentStateEntity);
     const appointmentStageRepository = dataSource.getRepository(AppointmentStageEntity);
-    
+
     const existingAppointments = await appointmentRepository.find();
     if (existingAppointments.length > 0) {
         return;
@@ -15,22 +15,22 @@ export const appointmentSeed = async (dataSource: DataSource): Promise<void> => 
 
     // Fechas para las citas
     const currentDate = new Date();
-    
+
     const tomorrow = new Date(currentDate);
     tomorrow.setDate(currentDate.getDate() + 1);
-    
+
     const dayAfterTomorrow = new Date(currentDate);
     dayAfterTomorrow.setDate(currentDate.getDate() + 2);
-    
+
     const nextWeek = new Date(currentDate);
     nextWeek.setDate(currentDate.getDate() + 7);
-    
+
     const nextMonth = new Date(currentDate);
     nextMonth.setMonth(currentDate.getMonth() + 1);
-    
+
     // Obtener el día de la semana actual para ajustar las fechas a días válidos para los profesionales
     const currentDayOfWeek = currentDate.getDay(); // 0 = Domingo, 1 = Lunes, etc.
-    
+
     // Asegurar que la fecha de mañana caiga en un día donde el profesional 1 trabaje (Lunes, Miércoles o Viernes)
     // Profesional 1: Lunes (1), Miércoles (3), Viernes (5)
     let nextDateProf1 = new Date(currentDate);
@@ -38,21 +38,21 @@ export const appointmentSeed = async (dataSource: DataSource): Promise<void> => 
     while (![1, 3, 5].includes(nextDateProf1.getDay())) {
         nextDateProf1.setDate(nextDateProf1.getDate() + 1);
     }
-    
+
     // Profesional 2: Martes (2), Jueves (4), Sábado (6)
     let nextDateProf2 = new Date(currentDate);
     nextDateProf2.setDate(currentDate.getDate() + 1);
     while (![2, 4, 6].includes(nextDateProf2.getDay())) {
         nextDateProf2.setDate(nextDateProf2.getDate() + 1);
     }
-    
+
     // Profesional 3: Lunes a Viernes (1-5)
     let nextDateProf3 = new Date(currentDate);
     nextDateProf3.setDate(currentDate.getDate() + 1);
     while (![1, 2, 3, 4, 5].includes(nextDateProf3.getDay())) {
         nextDateProf3.setDate(nextDateProf3.getDate() + 1);
     }
-    
+
     // Formato de fecha para base de datos
     const formatDate = (date: Date): string => {
         return date.toISOString().split('T')[0];
@@ -64,9 +64,9 @@ export const appointmentSeed = async (dataSource: DataSource): Promise<void> => 
         {
             Id: 1,
             ClientId: 1,
-            ServiceId: 1, 
-            ProfessionalId: 1, 
-            DtDate: formatDate(nextDateProf1), 
+            ServiceId: 1,
+            ProfessionalId: 1,
+            DtDate: formatDate(nextDateProf1),
             TTime: "09:00",
             TEndTime: "10:30", // Duración 90 minutos
             BIsCompleted: false,
@@ -79,7 +79,7 @@ export const appointmentSeed = async (dataSource: DataSource): Promise<void> => 
         {
             Id: 2,
             ClientId: 2,
-            ServiceId: 1, 
+            ServiceId: 1,
             ProfessionalId: 2,
             DtDate: formatDate(nextDateProf2),
             TTime: "14:00",
@@ -94,9 +94,9 @@ export const appointmentSeed = async (dataSource: DataSource): Promise<void> => 
         {
             Id: 3,
             ClientId: 1,
-            ServiceId: 2, 
-            ProfessionalId: 1, 
-            DtDate: formatDate(nextWeek), 
+            ServiceId: 2,
+            ProfessionalId: 1,
+            DtDate: formatDate(nextWeek),
             TTime: "15:00",
             TEndTime: "16:30", // Duración 90 minutos
             BIsCompleted: false,
@@ -166,9 +166,9 @@ export const appointmentSeed = async (dataSource: DataSource): Promise<void> => 
             updated_at: new Date().toISOString()
         }
     ];
-    
+
     await appointmentRepository.insert(appointments);
-    
+
     // Estados de citas para cada cita creada
     const appointmentStates = [
         // Cita 1: Creada inicialmente
@@ -189,7 +189,7 @@ export const appointmentSeed = async (dataSource: DataSource): Promise<void> => 
         {
             AppointmentId: 2,
             StateId: 1, // Creada
-            VcChangedBy: "1", 
+            VcChangedBy: "1",
             VcReason: "Creación inicial de cita",
             DtDateTime: new Date(Date.now() - 86400000).toISOString(), // 1 día atrás
             DtPreviousDate: formatDate(nextDateProf2),
@@ -217,7 +217,7 @@ export const appointmentSeed = async (dataSource: DataSource): Promise<void> => 
         {
             AppointmentId: 3,
             StateId: 1, // Creada
-            VcChangedBy: "1", 
+            VcChangedBy: "1",
             VcReason: "Creación inicial de cita",
             DtDateTime: new Date(Date.now() - 172800000).toISOString(), // 2 días atrás
             DtPreviousDate: formatDate(nextDateProf1), // Fecha original
@@ -231,7 +231,7 @@ export const appointmentSeed = async (dataSource: DataSource): Promise<void> => 
         {
             AppointmentId: 3,
             StateId: 4, // Reprogramada
-            VcChangedBy: "1", 
+            VcChangedBy: "1",
             VcReason: "Cliente solicitó cambio de fecha",
             DtDateTime: new Date(Date.now() - 86400000).toISOString(), // 1 día atrás
             DtPreviousDate: formatDate(nextDateProf1), // Fecha anterior
@@ -245,7 +245,7 @@ export const appointmentSeed = async (dataSource: DataSource): Promise<void> => 
         {
             AppointmentId: 4,
             StateId: 1, // Creada
-            VcChangedBy: "1", 
+            VcChangedBy: "1",
             VcReason: "Creación inicial de cita",
             DtDateTime: new Date(Date.now() - 172800000).toISOString(), // 2 días atrás
             DtPreviousDate: formatDate(nextDateProf3),
@@ -326,9 +326,9 @@ export const appointmentSeed = async (dataSource: DataSource): Promise<void> => 
             updated_at: new Date().toISOString()
         }
     ];
-    
+
     await appointmentStateRepository.insert(appointmentStates);
-    
+
     // Función para calcular fechas/horas de inicio y fin para las etapas
     const calculateDateTime = (date: string, time: string, addMinutes = 0): string => {
         const [hours, minutes] = time.split(':').map(Number);
@@ -337,14 +337,14 @@ export const appointmentSeed = async (dataSource: DataSource): Promise<void> => 
         dateTime.setMinutes(dateTime.getMinutes() + addMinutes);
         return dateTime.toISOString();
     };
-    
+
     // Crear etapas para cada cita basadas en el servicio (5 etapas para el servicio 1)
     // Etapas para la cita 1 (Servicio 1, 90 min en total)
     const appointmentStages = [
         // Etapas para la cita 1
         {
             AppointmentId: 1,
-            ServiceStageId: 1, 
+            ServiceStageId: 1,
             StartDateTime: calculateDateTime(formatDate(nextDateProf1), "09:00", 0),
             EndDateTime: calculateDateTime(formatDate(nextDateProf1), "09:00", 15),
             BlsProfessionalBusy: true,
@@ -353,7 +353,7 @@ export const appointmentSeed = async (dataSource: DataSource): Promise<void> => 
         },
         {
             AppointmentId: 1,
-            ServiceStageId: 2, 
+            ServiceStageId: 2,
             StartDateTime: calculateDateTime(formatDate(nextDateProf1), "09:00", 15),
             EndDateTime: calculateDateTime(formatDate(nextDateProf1), "09:00", 35),
             BlsProfessionalBusy: true,
@@ -362,7 +362,7 @@ export const appointmentSeed = async (dataSource: DataSource): Promise<void> => 
         },
         {
             AppointmentId: 1,
-            ServiceStageId: 3, 
+            ServiceStageId: 3,
             StartDateTime: calculateDateTime(formatDate(nextDateProf1), "09:00", 35),
             EndDateTime: calculateDateTime(formatDate(nextDateProf1), "09:00", 50),
             BlsProfessionalBusy: true,
@@ -387,11 +387,11 @@ export const appointmentSeed = async (dataSource: DataSource): Promise<void> => 
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         },
-        
+
         // Etapas para la cita 2 (mismo servicio, diferentes horas)
         {
             AppointmentId: 2,
-            ServiceStageId: 1, 
+            ServiceStageId: 1,
             StartDateTime: calculateDateTime(formatDate(nextDateProf2), "14:00", 0),
             EndDateTime: calculateDateTime(formatDate(nextDateProf2), "14:00", 15),
             BlsProfessionalBusy: true,
@@ -400,7 +400,7 @@ export const appointmentSeed = async (dataSource: DataSource): Promise<void> => 
         },
         {
             AppointmentId: 2,
-            ServiceStageId: 2, 
+            ServiceStageId: 2,
             StartDateTime: calculateDateTime(formatDate(nextDateProf2), "14:00", 15),
             EndDateTime: calculateDateTime(formatDate(nextDateProf2), "14:00", 35),
             BlsProfessionalBusy: true,
@@ -409,7 +409,7 @@ export const appointmentSeed = async (dataSource: DataSource): Promise<void> => 
         },
         {
             AppointmentId: 2,
-            ServiceStageId: 3, 
+            ServiceStageId: 3,
             StartDateTime: calculateDateTime(formatDate(nextDateProf2), "14:00", 35),
             EndDateTime: calculateDateTime(formatDate(nextDateProf2), "14:00", 50),
             BlsProfessionalBusy: true,
@@ -434,7 +434,7 @@ export const appointmentSeed = async (dataSource: DataSource): Promise<void> => 
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         },
-        
+
         // Etapas para la cita 3 (reprogramada, servicio 2)
         {
             AppointmentId: 3,
@@ -463,7 +463,7 @@ export const appointmentSeed = async (dataSource: DataSource): Promise<void> => 
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         },
-        
+
         // Etapas para las citas 4-7 (resumidas por simplicidad, pero seguirían el mismo patrón)
         // Cita 4 - Cancelada, pero las etapas aún están registradas
         {
@@ -494,6 +494,6 @@ export const appointmentSeed = async (dataSource: DataSource): Promise<void> => 
             updated_at: new Date().toISOString()
         }
     ];
-    
+
     await appointmentStageRepository.insert(appointmentStages);
 };

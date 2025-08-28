@@ -1,5 +1,5 @@
 import { DataSource } from 'typeorm';
-import { CategoryServiceEntity } from '../../modules/categoryService/entities/categoryService.entity';
+import { CategoryServiceEntity } from '../../../modules/categoryService/entities/categoryService.entity';
 
 export const categoryServiceSeed = async (dataSource: DataSource): Promise<void> => {
     const repository = dataSource.getRepository(CategoryServiceEntity);

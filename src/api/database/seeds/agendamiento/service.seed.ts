@@ -1,6 +1,6 @@
 import { DataSource } from 'typeorm';
-import { ServiceEntity } from '../../modules/service/entities/service.entity';
-import { ServiceStageEntity } from '../../modules/service/entities/serviceStage.entity';
+import { ServiceEntity } from '../../../modules/service/entities/service.entity';
+import { ServiceStageEntity } from '../../../modules/service/entities/serviceStage.entity';
 
 export const serviceSeed = async (dataSource: DataSource): Promise<void> => {
     const serviceRepository = dataSource.getRepository(ServiceEntity);
@@ -128,7 +128,7 @@ export const serviceSeed = async (dataSource: DataSource): Promise<void> => {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         },
-        
+
         // Etapas para Servicio 2: Pedicura Spa
         {
             ServiceId: 2,
@@ -180,7 +180,7 @@ export const serviceSeed = async (dataSource: DataSource): Promise<void> => {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         },
-        
+
         // Etapas para Servicio 3: Corte y Peinado
         {
             ServiceId: 3,
@@ -222,7 +222,7 @@ export const serviceSeed = async (dataSource: DataSource): Promise<void> => {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         },
-        
+
         // Etapas para Servicio 4: Tratamiento Capilar Intensivo
         {
             ServiceId: 4,

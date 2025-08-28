@@ -1,15 +1,15 @@
 import { DataSource } from 'typeorm';
-import { CompanyFlowDefinitionEntity } from '../../modules/llm/entities/companyFlowDefinition.entity';
-import { CompanyFlowStepEntity } from '../../modules/llm/entities/companyFlowStep.entity';
-import { CompanyFlowConditionEntity } from '../../modules/llm/entities/companyFlowCondition.entity';
-import { CompanyFlowToolEntity } from '../../modules/llm/entities/companyFlowTool.entity';
+import { CompanyFlowDefinitionEntity } from '../../../modules/llm/entities/companyFlowDefinition.entity';
+import { CompanyFlowStepEntity } from '../../../modules/llm/entities/companyFlowStep.entity';
+import { CompanyFlowConditionEntity } from '../../../modules/llm/entities/companyFlowCondition.entity';
+import { CompanyFlowToolEntity } from '../../../modules/llm/entities/companyFlowTool.entity';
 
 export const companyFlowSeed = async (dataSource: DataSource): Promise<void> => {
     const flowDefinitionRepository = dataSource.getRepository(CompanyFlowDefinitionEntity);
     const flowStepRepository = dataSource.getRepository(CompanyFlowStepEntity);
     const flowConditionRepository = dataSource.getRepository(CompanyFlowConditionEntity);
     const flowToolRepository = dataSource.getRepository(CompanyFlowToolEntity);
-    
+
     // Verificar si ya existen datos
     const existingFlowDefinitions = await flowDefinitionRepository.find();
     if (existingFlowDefinitions.length > 0) {
@@ -19,7 +19,7 @@ export const companyFlowSeed = async (dataSource: DataSource): Promise<void> => 
     // ====================================
     // 1. SEED COMPANY FLOW DEFINITIONS
     // ====================================
-    
+
     const flowDefinitions = [
         {
             CompanyId: 1,
@@ -76,7 +76,7 @@ export const companyFlowSeed = async (dataSource: DataSource): Promise<void> => 
     // ====================================
     // 2. SEED COMPANY FLOW STEPS
     // ====================================
-    
+
     const flowSteps = [
         {
             FlowDefinitionId: 1,
@@ -231,7 +231,7 @@ export const companyFlowSeed = async (dataSource: DataSource): Promise<void> => 
     // ====================================
     // 3. SEED COMPANY FLOW CONDITIONS
     // ====================================
-    
+
     const flowConditions = [
         {
             FlowDefinitionId: 1,
@@ -296,7 +296,7 @@ export const companyFlowSeed = async (dataSource: DataSource): Promise<void> => 
     // ====================================
     // 4. SEED COMPANY FLOW TOOLS
     // ====================================
-    
+
     const flowTools = [
         {
             FlowDefinitionId: 1,

@@ -43,6 +43,9 @@ export class CompanyEntity {
     @Column({ name: 'user_id', type: 'int', nullable: false })
     UserId: number;
 
+    @Column({ name: 'tx_prompt', type: 'text', nullable: true })
+    TxPrompt?: string;
+
     @CreateDateColumn({ name: 'created_at' })
     created_at: Date;
 

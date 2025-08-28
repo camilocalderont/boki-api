@@ -1,7 +1,7 @@
 import { DataSource } from 'typeorm';
-import { ProfessionalEntity } from '../../modules/professional/entities/professional.entity';
-import { ProfessionalBussinessHourEntity } from '../../modules/professional/entities/professionalBussinessHour.entity';
-import { ProfessionalServiceEntity } from '../../modules/professional/entities/professionalService.entity';
+import { ProfessionalEntity } from '../../../modules/professional/entities/professional.entity';
+import { ProfessionalBussinessHourEntity } from '../../../modules/professional/entities/professionalBussinessHour.entity';
+import { ProfessionalServiceEntity } from '../../../modules/professional/entities/professionalService.entity';
 
 export const professionalSeed = async (dataSource: DataSource): Promise<void> => {
     const professionalRepository = dataSource.getRepository(ProfessionalEntity);
@@ -67,7 +67,7 @@ export const professionalSeed = async (dataSource: DataSource): Promise<void> =>
     await professionalRepository.insert(professionals);
 
     // Crear horarios laborales que cubran todos los días de la semana
-    const businessHours = [ 
+    const businessHours = [
         // Luis - Lunes
         {
             ProfessionalId: 1,
@@ -261,4 +261,4 @@ export const professionalSeed = async (dataSource: DataSource): Promise<void> =>
     ];
 
     await professionalServiceRepository.insert(professionalServices);
-}; 
+};

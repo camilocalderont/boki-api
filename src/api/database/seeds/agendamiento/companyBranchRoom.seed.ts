@@ -1,11 +1,11 @@
 import { DataSource } from 'typeorm';
-import { CompanyBranchEntity } from '../../modules/companyBranch/entities/companyBranch.entity';
-import { CompanyBranchRoomEntity } from '../../modules/companyBranch/entities/companyBranchRoom.entity';
+import { CompanyBranchEntity } from '../../../modules/companyBranch/entities/companyBranch.entity';
+import { CompanyBranchRoomEntity } from '../../../modules/companyBranch/entities/companyBranchRoom.entity';
 
 export const companyBranchRoomSeed = async (dataSource: DataSource): Promise<void> => {
     const companyBranchRepository = dataSource.getRepository(CompanyBranchEntity);
     const companyBranchRoomRepository = dataSource.getRepository(CompanyBranchRoomEntity);
-    
+
     const existingBranches = await companyBranchRepository.find();
     if (existingBranches.length > 0) {
         return;
@@ -41,9 +41,9 @@ export const companyBranchRoomSeed = async (dataSource: DataSource): Promise<voi
             updated_at: new Date().toISOString()
         }
     ];
-    
+
     await companyBranchRepository.insert(branches);
-    
+
     const rooms = [
         {
             CompanyBranchId: 1,
@@ -67,7 +67,7 @@ export const companyBranchRoomSeed = async (dataSource: DataSource): Promise<voi
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         },
-        
+
         {
             CompanyBranchId: 2,
             VcNumber: "201",
@@ -91,6 +91,6 @@ export const companyBranchRoomSeed = async (dataSource: DataSource): Promise<voi
             updated_at: new Date().toISOString()
         }
     ];
-    
+
     await companyBranchRoomRepository.insert(rooms);
 };

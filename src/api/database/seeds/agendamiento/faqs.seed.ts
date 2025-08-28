@@ -1,5 +1,5 @@
 import { DataSource } from 'typeorm';
-import { FaqsEntity } from '../../modules/faqs/entities/faqs.entity'; // Ajusta la ruta a tu entidad Faqs
+import { FaqsEntity } from '../../../modules/faqs/entities/faqs.entity'; // Ajusta la ruta a tu entidad Faqs
 
 export const faqsSeed = async (dataSource: DataSource): Promise<void> => {
     const repository = dataSource.getRepository(FaqsEntity);

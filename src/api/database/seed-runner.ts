@@ -1,5 +1,5 @@
 import { AppDataSource } from './database.module';
-import { runSeeds } from './seeds';
+import { runSeeds } from './seeds/agendamiento';
 
 const seedDatabase = async () => {
     try {

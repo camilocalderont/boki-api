@@ -1,5 +1,5 @@
 import { DataSource } from 'typeorm';
-import { TagsEntity } from '../../modules/tags/entities/tags.entity';
+import { TagsEntity } from '../../../modules/tags/entities/tags.entity';
 export const tagsSeed = async (dataSource: DataSource): Promise<void> => {
     const repository = dataSource.getRepository(TagsEntity);
 

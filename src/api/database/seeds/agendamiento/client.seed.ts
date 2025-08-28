@@ -1,9 +1,9 @@
 import { DataSource } from 'typeorm';
-import { ClientEntity } from '../../modules/client/entities/client.entity';
+import { ClientEntity } from '../../../modules/client/entities/client.entity';
 
 export const clientSeed = async (dataSource: DataSource): Promise<void> => {
     const clientRepository = dataSource.getRepository(ClientEntity);
-    
+
     const existingClients = await clientRepository.find();
     if (existingClients.length > 0) {
         return;
@@ -38,6 +38,6 @@ export const clientSeed = async (dataSource: DataSource): Promise<void> => {
             CompanyId: 1
         }
     ];
-    
+
     await clientRepository.insert(clients);
 };
