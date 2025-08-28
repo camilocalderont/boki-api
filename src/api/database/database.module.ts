@@ -25,6 +25,9 @@ import { CompanyFlowStepEntity } from '../modules/llm/entities/companyFlowStep.e
 import { CompanyFlowConditionEntity } from '../modules/llm/entities/companyFlowCondition.entity';
 import { CompanyFlowToolEntity } from '../modules/llm/entities/companyFlowTool.entity';
 import { CompanyWhatsappSettingEntity } from '../modules/llm/entities/companyWhatsappSetting.entity';
+import { SessionEntity } from '../modules/chat/entities/session.entity';
+import { HistoryEntity } from '../modules/chat/entities/history.entity';
+import { MessageHistoryEntity } from '../modules/chat/entities/messageHistory.entity';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -36,7 +39,7 @@ export const AppDataSource = new DataSource({
   username: process.env.POSTGRES_DB_USER,
   password: process.env.POSTGRES_DB_PASSWORD,
   database: process.env.POSTGRES_DB_NAME,
-  entities: [ClientEntity, UsersEntity, CompanyEntity, CompanyBlockedTimeEntity, CompanyBranchEntity, CompanyBranchRoomEntity, ProfessionalEntity, ProfessionalBussinessHourEntity, ProfessionalServiceEntity, CategoryServiceEntity, ServiceEntity, ServiceStageEntity, StateEntity, AppointmentStateEntity, AppointmentEntity, AppointmentStageEntity, TagsEntity, FaqsEntity, FaqsTagsEntity, CompanyFlowDefinitionEntity, CompanyFlowStepEntity, CompanyFlowConditionEntity, CompanyFlowToolEntity, CompanyWhatsappSettingEntity],
+  entities: [ClientEntity, UsersEntity, CompanyEntity, CompanyBlockedTimeEntity, CompanyBranchEntity, CompanyBranchRoomEntity, ProfessionalEntity, ProfessionalBussinessHourEntity, ProfessionalServiceEntity, CategoryServiceEntity, ServiceEntity, ServiceStageEntity, StateEntity, AppointmentStateEntity, AppointmentEntity, AppointmentStageEntity, TagsEntity, FaqsEntity, FaqsTagsEntity, CompanyFlowDefinitionEntity, CompanyFlowStepEntity, CompanyFlowConditionEntity, CompanyFlowToolEntity, CompanyWhatsappSettingEntity, SessionEntity, HistoryEntity, MessageHistoryEntity],
   //comando para generar migraciones npx typeorm-ts-node-commonjs migration:generate src/api/database/migrations/crateNombreTable -d src/api/database/database.module.ts
   migrations: [join(__dirname, 'migrations', '**/*.{ts,js}')],
   logging: true,
