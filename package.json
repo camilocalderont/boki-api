@@ -15,7 +15,8 @@
     "migration:run": "npm run typeorm -- migration:run -d src/api/database/database.module.ts",
     "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/api/database/database.module.ts",
     "setup": "npm install && npm run migration:run && npm run build",
-    "seed:run": "ts-node -r tsconfig-paths/register src/api/database/seed-runner.ts"
+    "seed:agendamiento": "ts-node -r tsconfig-paths/register src/api/database/seed-runner-agendamiento.ts",
+    "seed:personero": "ts-node -r tsconfig-paths/register src/api/database/seed-runner-personero.ts"
   },
   "keywords": [],
   "dependencies": {
