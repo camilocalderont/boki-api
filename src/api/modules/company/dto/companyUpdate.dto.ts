@@ -8,4 +8,5 @@ export class UpdateCompanyDto {
   TxLogo?: string;
   TxImages?: string;
   UserId?: number;
+  TxPrompt?: string;
 }

@@ -13,6 +13,6 @@ export const updateCompanySchema = Joi.object({
   VcLegalRepresentative: Joi.string().min(2).max(50).required(),
   TxLogo: Joi.string().optional(),
   TxImages: Joi.string().optional(),
-  
+  TxPrompt: Joi.string().optional(),
   UserId: Joi.number().optional()
 }).messages(joiMessagesES);
