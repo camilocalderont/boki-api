@@ -20,22 +20,22 @@ export class CategoryServiceService extends BaseCrudService<CategoryServiceEntit
 
     protected async validateCreate(createCategoryServiceDto: CreateCategoryServiceDto): Promise<void> {
         if (!createCategoryServiceDto.VcName) {
-            throw new BadRequestException('Category name is required');
+            throw new BadRequestException('El nombre de la categoría es requerido');
         }
-        
+
         const existingName = await this.categoryServiceRepository.findOne({
             where: { VcName: createCategoryServiceDto.VcName }
         });
 
         if (existingName) {
-            throw new ConflictException('A service category with this name already exists');
+            throw new ConflictException('Ya existe una categoría con este nombre');
         }
     }
 
     async create(createCategoryServiceDto: CreateCategoryServiceDto): Promise<CategoryServiceEntity> {
         try {
             await this.validateCreate(createCategoryServiceDto);
-            
+
             return await super.create(createCategoryServiceDto);
         } catch (error) {
             if (error instanceof BadRequestException ||
@@ -56,7 +56,7 @@ export class CategoryServiceService extends BaseCrudService<CategoryServiceEntit
     protected async validateUpdate(id: number, updateCategoryServiceDto: UpdateCategoryServiceDto): Promise<void> {
         try {
             const categoryService = await this.findOne(id);
-            
+
             if (updateCategoryServiceDto.VcName && updateCategoryServiceDto.VcName !== categoryService.VcName) {
                 const existingName = await this.categoryServiceRepository.findOne({
                     where: { VcName: updateCategoryServiceDto.VcName }
@@ -77,18 +77,18 @@ export class CategoryServiceService extends BaseCrudService<CategoryServiceEntit
     async update(id: number, updateCategoryServiceDto: UpdateCategoryServiceDto): Promise<CategoryServiceEntity> {
         try {
             await this.validateUpdate(id, updateCategoryServiceDto);
-            
+
             const existingEntity = await this.findOne(id);
-            
+
             if (updateCategoryServiceDto.VcName !== undefined) {
                 existingEntity.VcName = updateCategoryServiceDto.VcName;
             }
-            
+
             return await this.categoryServiceRepository.save(existingEntity);
         } catch (error) {
             console.error('Error in update:', error);
-            if (error instanceof NotFoundException || 
-                error instanceof ConflictException || 
+            if (error instanceof NotFoundException ||
+                error instanceof ConflictException ||
                 error instanceof BadRequestException) {
                 throw error;
             }
