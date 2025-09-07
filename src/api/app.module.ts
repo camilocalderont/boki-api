@@ -22,6 +22,10 @@ import { FaqsModule } from './modules/faqs/faqs.module';
 import { ConversationModule } from './modules/conversation/conversation.module';
 import { LlmModule } from './modules/llm/llm.module';
 import { HealthModule } from './modules/health/health.module';
+import { CompanyPromptsModule } from './modules/companyPrompts/companyPrompts.module';
+import { PlanModule } from './modules/plan/plan.module';
+import { CompanyPlanModule } from './modules/companyPlan/companyPlan.module';
+import { CompanyPlanControlTokenModule } from './modules/companyPlanControlToken/companyPlanControlToken.module';
 
 @Module({
   imports: [
@@ -52,7 +56,11 @@ import { HealthModule } from './modules/health/health.module';
     TagsModule,
     FaqsModule,
     ConversationModule,
-    LlmModule
+    LlmModule,
+    CompanyPromptsModule,
+    PlanModule,
+    CompanyPlanModule,
+    CompanyPlanControlTokenModule
   ],
   controllers: [],
   providers: [

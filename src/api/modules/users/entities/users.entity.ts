@@ -1,5 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { CompanyEntity } from '../../company/entities/company.entity';
+import { CompanyPromptsEntity } from '../../companyPrompts/entities/companyPrompts.entity';
 
 @Entity('Users')
 export class UsersEntity {
@@ -41,4 +42,7 @@ export class UsersEntity {
 
     @OneToMany(() => CompanyEntity, company => company.User)
     Companies: CompanyEntity[];
+
+    @OneToMany(() => CompanyPromptsEntity, companyPrompt => companyPrompt.User)
+    CompanyPrompts: CompanyPromptsEntity[];
 }
