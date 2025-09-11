@@ -25,6 +25,15 @@ export class FaqsService extends BaseCrudService<FaqsEntity, CreateFaqsDto, Upda
         super(faqsEntityRepository);
     }
 
+    async findAll(filters?: Record<string, any>): Promise<FaqsEntity[]> {
+        try {
+            return await this.faqsRepository.findAll(filters);
+        } catch (error) {
+            console.error('Error in findAll:', error);
+            throw new BadRequestException('Error obteniendo las preguntas frecuentes');
+        }
+    }
+
     protected async validateSave(dto: CreateFaqsDto | UpdateFaqsDto, id?: number): Promise<void> {
         const errors: ApiErrorItem[] = [];
 

@@ -14,7 +14,10 @@ export class CategoryServiceRepository implements ICrudRepository<CategoryServic
     ) {}
 
     async findAll(filters?: Record<string, any>): Promise<CategoryServiceEntity[]> {
-        return await this.categoryServiceRepository.find(filters ? { where: filters } : undefined);
+        return await this.categoryServiceRepository.find({
+            relations: ['Company'],
+            where: filters
+        });
     }
 
     async findOne(id: number): Promise<CategoryServiceEntity | null> {

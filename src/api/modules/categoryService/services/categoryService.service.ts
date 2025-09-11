@@ -18,6 +18,15 @@ export class CategoryServiceService extends BaseCrudService<CategoryServiceEntit
         super(categoryServiceRepository);
     }
 
+    async findAll(filters?: Record<string, any>): Promise<CategoryServiceEntity[]> {
+        try {
+            return await this.categoryServiceCustomRepository.findAll(filters);
+        } catch (error) {
+            console.error('Error in findAll:', error);
+            throw new BadRequestException('Error obteniendo las categorías de servicio');
+        }
+    }
+
     protected async validateCreate(createCategoryServiceDto: CreateCategoryServiceDto): Promise<void> {
         if (!createCategoryServiceDto.VcName) {
             throw new BadRequestException('El nombre de la categoría es requerido');
@@ -82,6 +91,12 @@ export class CategoryServiceService extends BaseCrudService<CategoryServiceEntit
 
             if (updateCategoryServiceDto.VcName !== undefined) {
                 existingEntity.VcName = updateCategoryServiceDto.VcName;
+            }
+            if (updateCategoryServiceDto.CompanyId !== undefined) {
+                existingEntity.CompanyId = updateCategoryServiceDto.CompanyId as unknown as number;
+            }
+            if (updateCategoryServiceDto.BIsService !== undefined) {
+                existingEntity.BIsService = updateCategoryServiceDto.BIsService as unknown as boolean;
             }
 
             return await this.categoryServiceRepository.save(existingEntity);

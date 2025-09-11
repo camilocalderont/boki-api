@@ -1,4 +1,4 @@
-import { Controller, Inject, ValidationPipe, UsePipes, Get, Param, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Inject, ValidationPipe, UsePipes, Get, Param, HttpCode, HttpStatus, Post, Body, Put, BadRequestException, ParseIntPipe } from '@nestjs/common';
 import { CategoryServiceService } from '../services/categoryService.service';
 import { CategoryServiceEntity } from '../entities/categoryService.entity';
 import { CreateCategoryServiceDto } from '../dto/categoryServiceCreate.dto';
@@ -18,8 +18,16 @@ export class CategoryServiceController extends BaseCrudController<CategoryServic
         @Inject(CategoryServiceService)
         private readonly categoryServiceService: CategoryServiceService
     ) {
-        const createSchema = Joi.object({});
-        const updateSchema = Joi.object({});
+        const createSchema = Joi.object({
+            VcName: Joi.string().min(1).max(255),
+            CompanyId: Joi.number().integer().positive(),
+            BIsService: Joi.boolean()
+        }).min(1);
+        const updateSchema = Joi.object({
+            VcName: Joi.string().min(1).max(255),
+            CompanyId: Joi.number().integer().positive(),
+            BIsService: Joi.boolean()
+        }).min(1);
         super(categoryServiceService, 'category-services', createSchema, updateSchema);
     }
 

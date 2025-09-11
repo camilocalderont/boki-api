@@ -7,7 +7,13 @@ import { FaqsEntity } from '../entities/faqs.entity';
 export class FaqsRepository {
   constructor(
     @InjectRepository(FaqsEntity)
-    private readonly userRepository: Repository<FaqsEntity>,
+    private readonly faqsRepository: Repository<FaqsEntity>,
   ) {}
 
+  async findAll(filters?: Record<string, any>): Promise<FaqsEntity[]> {
+    return await this.faqsRepository.find({
+      relations: ['Company', 'CategoryService'],
+      where: filters
+    });
+  }
 }
