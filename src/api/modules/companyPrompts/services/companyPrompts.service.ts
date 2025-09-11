@@ -11,7 +11,7 @@ export class CompanyPromptsService implements ICrudService<CompanyPromptsEntity,
   constructor(
     @InjectRepository(CompanyPromptsEntity)
     private readonly companyPromptsRepository: Repository<CompanyPromptsEntity>,
-  ) {}
+  ) { }
 
   async create(createCompanyPromptsDto: CreateCompanyPromptsDto): Promise<CompanyPromptsEntity> {
     const companyPrompt = this.companyPromptsRepository.create(createCompanyPromptsDto);
@@ -30,12 +30,25 @@ export class CompanyPromptsService implements ICrudService<CompanyPromptsEntity,
       where: { Id: id },
       relations: ['Company', 'User']
     });
-    
+
     if (!companyPrompt) {
       throw new NotFoundException(`CompanyPrompt con ID ${id} no encontrado`);
     }
-    
+
     return companyPrompt;
+  }
+
+  async findByCompanyId(companyId: number): Promise<CompanyPromptsEntity[]> {
+    const companyPrompts = await this.companyPromptsRepository.find({
+      where: { CompanyId: companyId },
+      relations: ['Company', 'User']
+    });
+
+    if (!companyPrompts || companyPrompts.length === 0) {
+      throw new NotFoundException(`No se encontraron CompanyPrompts para la empresa con ID ${companyId}`);
+    }
+
+    return companyPrompts;
   }
 
   async update(id: number, updateCompanyPromptsDto: UpdateCompanyPromptsDto): Promise<CompanyPromptsEntity> {
