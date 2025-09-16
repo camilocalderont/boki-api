@@ -1,4 +1,4 @@
-import { Controller, Inject } from '@nestjs/common';
+import { Controller, Inject, Get, Param, ParseIntPipe } from '@nestjs/common';
 import { CompanyPlanService } from '../services/companyPlan.service';
 import { CompanyPlanEntity } from '../entities/companyPlan.entity';
 import { CreateCompanyPlanDto } from '../dto/companyPlanCreate.dto';
@@ -14,5 +14,10 @@ export class CompanyPlanController extends BaseCrudController<CompanyPlanEntity,
     private readonly companyPlanService: CompanyPlanService
   ) {
     super(companyPlanService, 'CompanyPlan', createCompanyPlanSchema, updateCompanyPlanSchema);
+  }
+
+  @Get('company/:companyId')
+  async findByCompanyId(@Param('companyId', ParseIntPipe) companyId: number): Promise<CompanyPlanEntity> {
+    return this.companyPlanService.findOneByCompanyId(companyId);
   }
 }

@@ -38,6 +38,19 @@ export class CompanyPlanService implements ICrudService<CompanyPlanEntity, Creat
     return companyPlan;
   }
 
+  async findOneByCompanyId(companyId: number): Promise<CompanyPlanEntity> {
+    const companyPlan = await this.companyPlanRepository.findOne({
+      where: { CompanyId: companyId },
+      relations: ['Company', 'Plan', 'CompanyPlanControlTokens']
+    });
+
+    if (!companyPlan) {
+      throw new NotFoundException(`CompanyPlan para la empresa con ID ${companyId} no encontrado`);
+    }
+
+    return companyPlan;
+  }
+
   async update(id: number, updateCompanyPlanDto: UpdateCompanyPlanDto): Promise<CompanyPlanEntity> {
     await this.findOne(id);
     await this.companyPlanRepository.update(id, updateCompanyPlanDto);
