@@ -51,6 +51,7 @@ export class JwtAuthGuard implements CanActivate {
     const publicRoutes = [
       { method: 'POST', path: '/api/v1/users' },
       { method: 'POST', path: '/api/v1/users/login' },
+      { method: 'POST', path: '/api/v1/semantic-search' },
     ];
 
     const isPublicRoute = publicRoutes.some(

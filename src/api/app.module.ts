@@ -26,6 +26,7 @@ import { CompanyPromptsModule } from './modules/companyPrompts/companyPrompts.mo
 import { PlanModule } from './modules/plan/plan.module';
 import { CompanyPlanModule } from './modules/companyPlan/companyPlan.module';
 import { CompanyPlanControlTokenModule } from './modules/companyPlanControlToken/companyPlanControlToken.module';
+import { SemanticSearchModule } from './modules/semanticSearch/semanticSearch.module';
 
 @Module({
   imports: [
@@ -60,7 +61,8 @@ import { CompanyPlanControlTokenModule } from './modules/companyPlanControlToken
     CompanyPromptsModule,
     PlanModule,
     CompanyPlanModule,
-    CompanyPlanControlTokenModule
+    CompanyPlanControlTokenModule,
+    SemanticSearchModule
   ],
   controllers: [],
   providers: [

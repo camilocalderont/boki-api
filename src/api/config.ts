@@ -15,5 +15,7 @@ export const configApi = {
     VERSION: process.env.API_VERSION,
 
     NUMBER_ID: process.env.NUMBER_ID,
-    VERIFY_TOKEN: process.env.VERIFY_TOKEN
+    VERIFY_TOKEN: process.env.VERIFY_TOKEN,
+
+    OPENAI_API_KEY: process.env.LLM_APIKEY
 };
