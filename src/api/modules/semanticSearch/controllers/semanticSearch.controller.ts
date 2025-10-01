@@ -1,5 +1,12 @@
-import { Controller, Inject, Post, Body, ValidationPipe, UsePipes } from '@nestjs/common';
-import { SemanticSearchDto } from '../dto/semanticSearch.dto';
+import { 
+  Controller, 
+  Inject, 
+  Post, 
+  Body, 
+  ValidationPipe, 
+  UsePipes 
+} from '@nestjs/common';
+import { SemanticSearchDto, ServiceSearchDto } from '../dto/semanticSearch.dto';
 import { Public } from '../../../shared/decorators/public.decorator';
 import { SemanticSearchService } from '../services/semanticSearch.service';
 
@@ -15,6 +22,10 @@ export class SemanticSearchController {
     private readonly semanticSearchService: SemanticSearchService,
   ) {}
 
+  // ============================================
+  // Endpoints de FAQs 
+  // ============================================
+  
   @Public()
   @Post()
   async search(@Body() dto: SemanticSearchDto) {
@@ -28,5 +39,24 @@ export class SemanticSearchController {
   @Post('generate-embeddings')
   async generateEmbeddings() {
     return await this.semanticSearchService.generateAllFaqEmbeddings();
+  }
+
+  // ============================================
+  // endpoints de Servicios
+  // ============================================
+
+  @Public()
+  @Post('services/search')
+  async searchServices(@Body() dto: ServiceSearchDto) {
+    return await this.semanticSearchService.searchSimilarServices(
+      dto.userMessage,
+      dto.companyId,
+    );
+  }
+
+  @Public()
+  @Post('services/generate-embeddings')
+  async generateServiceEmbeddings() {
+    return await this.semanticSearchService.generateAllServiceEmbeddings();
   }
 }
