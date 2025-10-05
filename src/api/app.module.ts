@@ -27,6 +27,7 @@ import { PlanModule } from './modules/plan/plan.module';
 import { CompanyPlanModule } from './modules/companyPlan/companyPlan.module';
 import { CompanyPlanControlTokenModule } from './modules/companyPlanControlToken/companyPlanControlToken.module';
 import { SemanticSearchModule } from './modules/semanticSearch/semanticSearch.module';
+import { EmailTemplatesModule } from './modules/emailTemplates/email-templates.module';
 
 @Module({
   imports: [
@@ -62,7 +63,8 @@ import { SemanticSearchModule } from './modules/semanticSearch/semanticSearch.mo
     PlanModule,
     CompanyPlanModule,
     CompanyPlanControlTokenModule,
-    SemanticSearchModule
+    SemanticSearchModule,
+    EmailTemplatesModule
   ],
   controllers: [],
   providers: [

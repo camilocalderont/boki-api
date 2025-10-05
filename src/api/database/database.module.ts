@@ -33,6 +33,7 @@ import { CompanyPromptsEntity } from "../modules/companyPrompts/entities/company
 import { PlanEntity } from "../modules/plan/entities/plan.entity";
 import { CompanyPlanEntity } from "../modules/companyPlan/entities/companyPlan.entity";
 import { CompanyPlanControlTokenEntity } from "../modules/companyPlanControlToken/entities/companyPlanControlToken.entity";
+import { EmailTemplatesEntity } from "../modules/emailTemplates/entities/email-templates.entity";
 
 dotenv.config();
 
@@ -74,7 +75,8 @@ export const AppDataSource = new DataSource({
     CompanyPromptsEntity,
     PlanEntity,
     CompanyPlanEntity,
-    CompanyPlanControlTokenEntity
+    CompanyPlanControlTokenEntity,
+    EmailTemplatesEntity
   ],
   //comando para generar migraciones npx typeorm-ts-node-commonjs migration:generate src/api/database/migrations/crateNombreTable -d src/api/database/database.module.ts
   migrations: [join(__dirname, "migrations", "**/*.{ts,js}")],
