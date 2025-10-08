@@ -2,6 +2,7 @@ export interface EmailTemplateResponse {
   Id: number;
   CategoryName: string;
   ContextDescription: string;
+  SearchKeywords: string;
   CompanyId: number;
   Embedding: number[] | null;
   CreatedAt: Date;

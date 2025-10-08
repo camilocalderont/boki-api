@@ -12,6 +12,9 @@ export class EmailTemplatesEntity {
     @Column({ name: 'context_description', type: 'text' })
     ContextDescription: string;
 
+    @Column({ name: 'search_keywords', type: 'text', nullable: true })
+    SearchKeywords: string;
+
     @Column({ name: 'company_id', type: 'integer' })
     CompanyId: number;
 

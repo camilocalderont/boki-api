@@ -48,3 +48,27 @@ export interface ServiceSearchResponse {
   }> | null;
   tokens: TokenUsage;
 }
+
+
+// ============================================
+// EmailTemplates
+// ============================================
+
+export class EmailTemplateSearchDto {
+  @IsString()
+  userMessage: string;
+
+  @IsString()
+  companyId: string;
+}
+
+export interface EmailTemplateSearchResponse {
+  templates: Array<{
+    id: number;
+    categoryName: string;
+    contextDescription: string;
+    searchKeywords: string;
+    similarity: number;
+  }> | null;
+  tokens: TokenUsage;
+}

@@ -4,7 +4,8 @@ import { SemanticSearchRepository } from '../repositories/semantic-search.reposi
 import {
   TokenUsage,
   SearchResponse,
-  ServiceSearchResponse
+  ServiceSearchResponse,
+  EmailTemplateSearchResponse
 } from '../dto/semanticSearch.dto';
 
 @Injectable()
@@ -202,6 +203,81 @@ export class SemanticSearchService {
       ['Id', 'vc_question', 'vc_answer'],
       (record) => record.vc_question
     );
+  }
+
+  // ============================================
+  // BÚSQUEDA SEMÁNTICA DE EMAIL TEMPLATES
+  // ============================================
+  async searchSimilarEmailTemplates(
+    userMessage: string,
+    companyId: string
+  ): Promise<EmailTemplateSearchResponse> {
+
+    let totalTokensEntrada = 0;
+    let totalTokensSalida = 0;
+
+    try {
+      this.logger.log(`Searching templates with full message: "${userMessage}"`);
+
+      const { embedding, tokensUsed } = await this.embeddingService.generateEmbedding(userMessage);
+
+      totalTokensEntrada += tokensUsed.promptTokens;
+      totalTokensSalida += tokensUsed.completionTokens;
+
+      // Buscar templates similares
+      const query = `
+      SELECT 
+        et."Id" as id,
+        et.category_name as "categoryName",
+        et.context_description as "contextDescription",
+        et.search_keywords as "searchKeywords",
+        (1 - (et.embedding <=> $1::vector)) as similarity
+      FROM "EmailTemplates" et
+      WHERE et."company_id" = $2
+        AND et.embedding IS NOT NULL
+      ORDER BY et.embedding <=> $1::vector
+      LIMIT 3
+    `;
+
+      const result = await this.searchRepository.executeRawQuery(query, [
+        JSON.stringify(embedding),
+        companyId,
+      ]);
+
+      if (!result || result.length === 0) {
+        this.logger.warn(`No email templates found for company ${companyId}`);
+        return {
+          templates: null,
+          tokens: {
+            TotalTokensEntrada: totalTokensEntrada,
+            TotalTokensSalida: totalTokensSalida,
+            TotalTokens: totalTokensEntrada + totalTokensSalida
+          }
+        };
+      }
+
+      const templates = result.map(row => ({
+        id: row.id,
+        categoryName: row.categoryName,
+        contextDescription: row.contextDescription,
+        searchKeywords: row.searchKeywords,
+        similarity: parseFloat(row.similarity.toFixed(4))
+      }));
+
+      this.logger.log(`Found ${templates.length} similar templates. Top match: ${templates[0].categoryName} (${(templates[0].similarity * 100).toFixed(1)}%)`);
+
+      return {
+        templates,
+        tokens: {
+          TotalTokensEntrada: totalTokensEntrada,
+          TotalTokensSalida: totalTokensSalida,
+          TotalTokens: totalTokensEntrada + totalTokensSalida
+        }
+      };
+    } catch (error) {
+      this.logger.error('Error searching similar email templates:', error);
+      throw error;
+    }
   }
 
   // ============================================

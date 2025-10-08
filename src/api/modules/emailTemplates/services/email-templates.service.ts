@@ -53,8 +53,8 @@ export class EmailTemplatesService extends BaseCrudService<
         try {
             await this.validateCreate(createDto);
 
-            // Generar embedding antes de crear
-            const { embedding } = await this.embeddingService.generateEmbedding(createDto.ContextDescription);
+            // embedding a partir de SearchKeywords
+            const { embedding } = await this.embeddingService.generateEmbedding(createDto.SearchKeywords);
 
             const entity = this.emailTemplatesEntityRepository.create({
                 ...createDto,
@@ -138,9 +138,9 @@ export class EmailTemplatesService extends BaseCrudService<
     ): Promise<Partial<EmailTemplatesEntity>> {
         const preparedData: any = { ...updateDto };
 
-        // Si se actualiza la descripción, regenerar el embedding
-        if (updateDto.ContextDescription) {
-            const { embedding } = await this.embeddingService.generateEmbedding(updateDto.ContextDescription);
+        // 🔥 Si se actualiza SearchKeywords, regenerar el embedding
+        if (updateDto.SearchKeywords) {
+            const { embedding } = await this.embeddingService.generateEmbedding(updateDto.SearchKeywords);
             preparedData.Embedding = embedding;
         }
 
@@ -158,7 +158,10 @@ export class EmailTemplatesService extends BaseCrudService<
 
         for (const template of templates) {
             try {
-                const { embedding } = await this.embeddingService.generateEmbedding(template.ContextDescription);
+                // 🔥 Usar SearchKeywords si existe, sino ContextDescription (para templates antiguos)
+                const textForEmbedding = template.SearchKeywords || template.ContextDescription;
+
+                const { embedding } = await this.embeddingService.generateEmbedding(textForEmbedding);
 
                 await this.emailTemplatesEntityRepository.update(template.Id, {
                     Embedding: embedding as any

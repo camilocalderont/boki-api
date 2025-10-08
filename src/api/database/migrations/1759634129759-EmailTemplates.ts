@@ -10,6 +10,7 @@ export class EmailTemplates1759634129759 implements MigrationInterface {
             "Id" SERIAL NOT NULL, 
             "category_name" VARCHAR(255) NOT NULL, 
             "context_description" TEXT NOT NULL, 
+            "search_keywords" TEXT, 
             "company_id" integer NOT NULL, 
             "embedding" vector(1536), 
             "created_at" TIMESTAMP NOT NULL DEFAULT now(), 
@@ -19,7 +20,7 @@ export class EmailTemplates1759634129759 implements MigrationInterface {
         
         await queryRunner.query(`ALTER TABLE "EmailTemplates" ADD CONSTRAINT "FK_EmailTemplates_Company" FOREIGN KEY ("company_id") REFERENCES "Company"("Id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         
-        // índice para búsqueda vectorial
+        // Índice para búsqueda vectorial
         await queryRunner.query(`CREATE INDEX "IDX_EmailTemplates_embedding" ON "EmailTemplates" USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100)`);
     }
 

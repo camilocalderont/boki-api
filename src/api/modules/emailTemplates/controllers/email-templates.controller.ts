@@ -16,8 +16,8 @@ import { Public } from '../../../shared/decorators/public.decorator';
   transformOptions: { enableImplicitConversion: true }
 }))
 export class EmailTemplatesController extends BaseCrudController<
-  EmailTemplatesEntity, 
-  CreateEmailTemplatesDto, 
+  EmailTemplatesEntity,
+  CreateEmailTemplatesDto,
   UpdateEmailTemplatesDto
 > {
   constructor(
@@ -31,7 +31,7 @@ export class EmailTemplatesController extends BaseCrudController<
   async create(@Body() createDto: CreateEmailTemplatesDto): Promise<ApiControllerResponse<EmailTemplatesEntity>> {
     const template = await this.emailTemplatesService.create(createDto);
     return {
-      message: 'Template de email creado exitosamente con embedding generado',
+      message: 'Template de email creado exitosamente con embedding generado desde search_keywords',
       data: template
     };
   }
@@ -59,11 +59,11 @@ export class EmailTemplatesController extends BaseCrudController<
 
   @Post('regenerate-embeddings')
   async regenerateEmbeddings(
-    @Query('companyId', ParseIntPipe) companyId?: number
+    @Query('companyId') companyId?: number
   ): Promise<ApiControllerResponse<{ processed: number; message: string }>> {
     const result = await this.emailTemplatesService.regenerateEmbeddings(companyId);
     return {
-      message: 'Embeddings regenerados exitosamente',
+      message: 'Embeddings regenerados exitosamente desde search_keywords',
       data: result
     };
   }

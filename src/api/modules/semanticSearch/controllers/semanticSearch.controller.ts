@@ -1,31 +1,31 @@
-import { 
-  Controller, 
-  Inject, 
-  Post, 
-  Body, 
-  ValidationPipe, 
-  UsePipes 
+import {
+  Controller,
+  Inject,
+  Post,
+  Body,
+  ValidationPipe,
+  UsePipes
 } from '@nestjs/common';
-import { SemanticSearchDto, ServiceSearchDto } from '../dto/semanticSearch.dto';
+import { EmailTemplateSearchDto, SemanticSearchDto, ServiceSearchDto } from '../dto/semanticSearch.dto';
 import { Public } from '../../../shared/decorators/public.decorator';
 import { SemanticSearchService } from '../services/semanticSearch.service';
 
 @Controller('semantic-search')
 @UsePipes(new ValidationPipe({
   transform: true,
-  forbidNonWhitelisted: false, 
+  forbidNonWhitelisted: false,
   transformOptions: { enableImplicitConversion: true },
 }))
 export class SemanticSearchController {
   constructor(
     @Inject(SemanticSearchService)
     private readonly semanticSearchService: SemanticSearchService,
-  ) {}
+  ) { }
 
   // ============================================
   // Endpoints de FAQs 
   // ============================================
-  
+
   @Public()
   @Post()
   async search(@Body() dto: SemanticSearchDto) {
@@ -58,5 +58,18 @@ export class SemanticSearchController {
   @Post('services/generate-embeddings')
   async generateServiceEmbeddings() {
     return await this.semanticSearchService.generateAllServiceEmbeddings();
+  }
+
+  // ============================================
+  // Email Templates
+  // ============================================
+
+  @Public()
+  @Post('email-templates/search')
+  async searchEmailTemplates(@Body() dto: EmailTemplateSearchDto) {
+    return await this.semanticSearchService.searchSimilarEmailTemplates(
+      dto.userMessage,
+      dto.companyId,
+    );
   }
 }
