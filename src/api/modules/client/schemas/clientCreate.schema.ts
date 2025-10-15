@@ -1,4 +1,4 @@
-import * as Joi from 'joi';
+import Joi from 'joi';
 import { joiMessagesES } from '../../../shared/utils/joi-messages';
 
 export const createClientSchema = Joi.object({
@@ -8,9 +8,9 @@ export const createClientSchema = Joi.object({
       'string.pattern.base': 'El número de identificación debe contener solo dígitos'
     }),
   VcPhone: Joi.number().required()
-  .messages({
-    'string.pattern.base': 'El número de teléfono debe tener el formato 57 seguido de 10 dígitos (ej: 573102222012)'
-  }),
+    .messages({
+      'string.pattern.base': 'El número de teléfono debe tener el formato 57 seguido de 10 dígitos (ej: 573102222012)'
+    }),
   VcNickName: Joi.string().min(2).max(50).optional(),
   VcFirstName: Joi.string().min(2).max(50).required(),
   VcSecondName: Joi.string().min(2).max(50).optional(),

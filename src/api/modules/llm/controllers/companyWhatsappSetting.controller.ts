@@ -1,6 +1,6 @@
 import { Controller, Inject, ValidationPipe, Get, Param, ParseIntPipe, HttpCode, HttpStatus } from "@nestjs/common";
 import { UsePipes } from "@nestjs/common";
-import { BaseCrudController } from "~/api/shared/controllers/crud.controller";
+import { BaseCrudController } from "../../../shared/controllers/crud.controller";
 import { CompanyWhatsappSettingEntity } from "../entities/companyWhatsappSetting.entity";
 import { CompanyWhatsappSettingService } from "../services/companyWhatsappSetting.service";
 import { CreateCompanyWhatsappSettingDto } from "../dto/createCompanyWhatsappSetting.dto";

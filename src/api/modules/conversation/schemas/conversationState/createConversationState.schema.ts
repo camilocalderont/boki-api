@@ -1,5 +1,5 @@
 import Joi from "joi";
-import { joiMessagesES } from "~/api/shared/utils/joi-messages";
+import { joiMessagesES } from "../../../../shared/utils/joi-messages";
 
 export const createConversationStateSchema = Joi.object({
     contactId: Joi.string().required(),

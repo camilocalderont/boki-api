@@ -1,5 +1,5 @@
 import Joi from "joi";
-import { joiMessagesES } from "~/api/shared/utils/joi-messages";
+import { joiMessagesES } from "../../../../shared/utils/joi-messages";
 
 export const updateConversationStateSchema = Joi.object({
     flow: Joi.string().optional(),

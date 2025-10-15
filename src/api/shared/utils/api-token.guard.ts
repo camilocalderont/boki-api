@@ -1,6 +1,6 @@
 import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { Request } from 'express';
-import { configApi } from '~/api/config';
+import { configApi } from '../../config';
 
 
 @Injectable()

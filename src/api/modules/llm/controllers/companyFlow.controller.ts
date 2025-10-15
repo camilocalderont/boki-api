@@ -1,5 +1,4 @@
 import { Controller, Inject, ValidationPipe, UsePipes, Get, Post, Put, Delete, Param, Body, Query, ParseIntPipe, HttpCode, HttpStatus } from "@nestjs/common";
-import { BaseCrudController } from "~/api/shared/controllers/crud.controller";
 import { CompanyFlowDefinitionEntity } from "../entities/companyFlowDefinition.entity";
 import { CompanyFlowService } from "../services/companyFlow.service";
 import { CreateFlowDto } from "../dto/createFlow.dto";

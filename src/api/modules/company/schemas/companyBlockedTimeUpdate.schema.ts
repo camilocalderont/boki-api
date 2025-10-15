@@ -1,4 +1,4 @@
-import * as Joi from 'joi';
+import Joi from 'joi';
 import { joiMessagesES } from '../../../shared/utils/joi-messages';
 
 export const updateCompanyBlockedTimeSchema = Joi.object({

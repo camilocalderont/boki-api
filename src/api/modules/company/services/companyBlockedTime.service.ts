@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException, Inject } from '@nestjs/common';
-import { BaseCrudService } from '~/api/shared/services/crud.services';
+import { BaseCrudService } from '../../../shared/services/crud.services';
 import { CompanyBlockedTimeEntity } from '../entities/companyBlockedTime.entity';
 import { CreateCompanyBlockedTimeDto } from '../dto/companyBlockedTimeCreate.dto';
 import { UpdateCompanyBlockedTimeDto } from '../dto/companyBlockedTimeUpdate.dto';

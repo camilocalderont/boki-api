@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { BaseCrudService } from '~/api/shared/services/crud.services';
+import { BaseCrudService } from '../../../shared/services/crud.services';
 import { CompanyFlowDefinitionEntity } from '../entities/companyFlowDefinition.entity';
 import { CompanyFlowStepEntity } from '../entities/companyFlowStep.entity';
 import { CompanyFlowConditionEntity } from '../entities/companyFlowCondition.entity';
