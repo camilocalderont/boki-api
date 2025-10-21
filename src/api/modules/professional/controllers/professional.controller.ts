@@ -8,8 +8,7 @@ import { BaseCrudController } from '../../../shared/controllers/crud.controller'
 import { createProfessionalSchema } from '../schemas/professionalCreate.schema';
 import { updateProfessionalSchema } from '../schemas/professionalUpdate.schema';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { UseJoiValidationPipe } from '~/api/shared/utils/pipes/use-joi.pipe';
-import Joi from 'joi';
+import { AllowApiKey } from '../../../shared/decorators/allow-api-key.decorator';
 
 @Controller('professional')
 @UsePipes(new ValidationPipe({
@@ -48,7 +47,7 @@ export class ProfessionalController extends BaseCrudController<ProfessionalEntit
         );
       }
     }
-    
+
     if (createProfessionalDto.Services && typeof createProfessionalDto.Services === 'string') {
       try {
         createProfessionalDto.Services = JSON.parse(createProfessionalDto.Services);
@@ -144,7 +143,7 @@ export class ProfessionalController extends BaseCrudController<ProfessionalEntit
       const format = `data:${file.mimetype};base64,`;
       updateProfessionalDto['TxPhoto'] = format + base64Image;
     }
-    
+
     if (updateProfessionalDto.BussinessHours && typeof updateProfessionalDto.BussinessHours === 'string') {
       try {
         updateProfessionalDto.BussinessHours = JSON.parse(updateProfessionalDto.BussinessHours);
@@ -159,7 +158,7 @@ export class ProfessionalController extends BaseCrudController<ProfessionalEntit
         );
       }
     }
-    
+
     if (updateProfessionalDto.Services && typeof updateProfessionalDto.Services === 'string') {
       try {
         updateProfessionalDto.Services = JSON.parse(updateProfessionalDto.Services);
@@ -187,7 +186,7 @@ export class ProfessionalController extends BaseCrudController<ProfessionalEntit
     if (isNaN(serviceId) || serviceId <= 0) {
       throw new BadRequestException(`ID de servicio inválido: ${serviceId}. El ID debe ser un número positivo.`);
     }
-    
+
     const professionals = await this.professionalService.findByServiceId(serviceId);
     return {
       message: `Profesionales encontrados para el servicio con ID: ${serviceId}`,
@@ -201,9 +200,9 @@ export class ProfessionalController extends BaseCrudController<ProfessionalEntit
     if (isNaN(serviceId) || serviceId <= 0) {
       throw new BadRequestException(`ID de servicio inválido: ${serviceId}. El ID debe ser un número positivo.`);
     }
-    
+
     let parsedDate;
-    
+
     if (startDate) {
       try {
         if (startDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
@@ -212,7 +211,7 @@ export class ProfessionalController extends BaseCrudController<ProfessionalEntit
         } else {
           parsedDate = new Date(startDate);
         }
-        
+
         if (isNaN(parsedDate.getTime())) {
           throw new BadRequestException(`La fecha proporcionada no es válida: ${startDate}`);
         }
@@ -220,7 +219,7 @@ export class ProfessionalController extends BaseCrudController<ProfessionalEntit
         throw new BadRequestException(`Error al procesar la fecha: ${startDate}`);
       }
     }
-    
+
     return await this.professionalService.findByServiceIdForLLM(serviceId, parsedDate);
   }
 
@@ -230,9 +229,9 @@ export class ProfessionalController extends BaseCrudController<ProfessionalEntit
     if (isNaN(companyId) || companyId <= 0) {
       throw new BadRequestException(`ID de compañía inválido: ${companyId}. El ID debe ser un número positivo.`);
     }
-    
+
     let parsedDate;
-    
+
     if (startDate) {
       try {
         if (startDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
@@ -241,7 +240,7 @@ export class ProfessionalController extends BaseCrudController<ProfessionalEntit
         } else {
           parsedDate = new Date(startDate);
         }
-        
+
         if (isNaN(parsedDate.getTime())) {
           throw new BadRequestException(`La fecha proporcionada no es válida: ${startDate}`);
         }
@@ -249,7 +248,7 @@ export class ProfessionalController extends BaseCrudController<ProfessionalEntit
         throw new BadRequestException(`Error al procesar la fecha: ${startDate}`);
       }
     }
-    
+
     return await this.professionalService.findByCompanyIdForLLM(companyId, parsedDate);
   }
 
@@ -258,9 +257,9 @@ export class ProfessionalController extends BaseCrudController<ProfessionalEntit
     if (isNaN(professionalId) || professionalId <= 0) {
       throw new BadRequestException(`ID de profesional inválido: ${professionalId}. El ID debe ser un número positivo.`);
     }
-    
+
     let parsedDate;
-    
+
     if (startDate) {
       try {
         if (startDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
@@ -269,7 +268,7 @@ export class ProfessionalController extends BaseCrudController<ProfessionalEntit
         } else {
           parsedDate = new Date(startDate);
         }
-        
+
         if (isNaN(parsedDate.getTime())) {
           throw new BadRequestException(`La fecha proporcionada no es válida: ${startDate}`);
         }
@@ -277,7 +276,7 @@ export class ProfessionalController extends BaseCrudController<ProfessionalEntit
         throw new BadRequestException(`Error al procesar la fecha: ${startDate}`);
       }
     }
-    
+
     const availability = await this.professionalService.findGeneralAvailability(professionalId, parsedDate);
     return {
       message: `Disponibilidad general del profesional con ID: ${professionalId}`,
@@ -294,11 +293,11 @@ export class ProfessionalController extends BaseCrudController<ProfessionalEntit
     if (isNaN(serviceId) || serviceId <= 0) {
       throw new BadRequestException(`ID de servicio inválido: ${serviceId}. El ID debe ser un número positivo.`);
     }
-    
+
     if (!dateString || dateString.trim() === '') {
       throw new BadRequestException('La fecha es obligatoria. Debe proporcionar una fecha válida (YYYY-MM-DD).');
     }
-    
+
     let date: Date;
     try {
       date = new Date(dateString);
@@ -308,11 +307,26 @@ export class ProfessionalController extends BaseCrudController<ProfessionalEntit
     } catch (error) {
       throw new BadRequestException(`Formato de fecha inválido: ${dateString}. Debe ser una fecha válida (YYYY-MM-DD).`);
     }
-    
+
     const availableSlots = await this.professionalService.findAvailableSlots(professionalId, serviceId, date);
     return {
       message: `Espacios disponibles para el profesional con ID: ${professionalId}, servicio con ID: ${serviceId} y fecha: ${dateString}`,
       data: availableSlots
+    };
+  }
+
+  @Get('company/:companyId/agent')
+  @AllowApiKey()  
+  @HttpCode(HttpStatus.OK)
+  async findByCompanyIdForAgent(@Param('companyId', ParseIntPipe) companyId: number): Promise<ApiControllerResponse<any[]>> {
+    if (isNaN(companyId) || companyId <= 0) {
+      throw new BadRequestException(`ID de compañía inválido: ${companyId}. El ID debe ser un número positivo.`);
+    }
+
+    const professionals = await this.professionalService.findByCompanyIdForAgent(companyId);
+    return {
+      message: `Profesionales encontrados para la compañía con ID: ${companyId}`,
+      data: professionals
     };
   }
 }

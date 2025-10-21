@@ -68,16 +68,18 @@ import { EmailTemplatesModule } from './modules/emailTemplates/email-templates.m
   ],
   controllers: [],
   providers: [
-    Reflector,
     // API Token Guard
     {
       provide: APP_GUARD,
       useClass: ApiTokenGuard,
     },
-    // JWT Auth Guard
+    // JWT Auth Guard con Reflector inyectado
     {
       provide: APP_GUARD,
-      useClass: JwtAuthGuard,
+      useFactory: (reflector: Reflector) => {
+        return new JwtAuthGuard(reflector);
+      },
+      inject: [Reflector],
     }
   ],
 })

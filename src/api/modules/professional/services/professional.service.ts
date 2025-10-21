@@ -915,4 +915,103 @@ export class ProfessionalService extends BaseCrudService<ProfessionalEntity, Cre
             throw new BadRequestException(`Error obteniendo profesionales con disponibilidad para LLM por compañía: ${error.message}`);
         }
     }
+
+    async findByCompanyIdForAgent(companyId: number): Promise<any[]> {
+        try {
+            const professionals = await this.professionalTypeOrmRepo.find({
+                where: { CompanyId: companyId },
+                relations: [
+                    'Services',
+                    'Services.Service',
+                    'BussinessHours'
+                ]
+            });
+
+            if (!professionals || professionals.length === 0) {
+                throw new NotFoundException([
+                    {
+                        code: 'PROFESIONALES_NO_ENCONTRADOS',
+                        message: `No se encontraron profesionales para la compañía con ID: ${companyId}`,
+                        field: 'CompanyId'
+                    }
+                ], `No se encontraron profesionales para la compañía con ID: ${companyId}`);
+            }
+
+            const diasSemana = {
+                1: 'Lunes',
+                2: 'Martes',
+                3: 'Miércoles',
+                4: 'Jueves',
+                5: 'Viernes',
+                6: 'Sábado',
+                7: 'Domingo'
+            };
+
+            return professionals.map(professional => {
+                const fullName = `${professional.VcFirstName}${professional.VcSecondName ? ' ' + professional.VcSecondName : ''} ${professional.VcFirstLastName}${professional.VcSecondLastName ? ' ' + professional.VcSecondLastName : ''}`.trim();
+
+                // ✅ NUEVA ESTRUCTURA: Combinar nombre y ID del servicio
+                const servicios = professional.Services
+                    ?.map(ps => ({
+                        service_id: ps.ServiceId,
+                        service: ps.Service?.VcName || 'Servicio sin nombre'
+                    }))
+                    .filter(s => s.service_id && s.service) || [];
+
+                // Formatear horarios
+                const horarios = professional.BussinessHours
+                    ?.sort((a, b) => a.IDayOfWeek - b.IDayOfWeek)
+                    .map(bh => {
+                        const formatTime = (time: Date | string) => {
+                            if (!time) return '';
+                            const timeStr = time instanceof Date
+                                ? time.toTimeString().slice(0, 5)
+                                : String(time).slice(0, 5);
+                            return timeStr;
+                        };
+
+                        const horario: any = {
+                            dia: diasSemana[bh.IDayOfWeek] || `Día ${bh.IDayOfWeek}`,
+                            horaInicio: formatTime(bh.TStartTime),
+                            horaFin: formatTime(bh.TEndTime)
+                        };
+
+                        // Agregar horario de almuerzo/break si existe
+                        if (bh.TBreakStartTime && bh.TBreakEndTime) {
+                            horario.break = {
+                                inicio: formatTime(bh.TBreakStartTime),
+                                fin: formatTime(bh.TBreakEndTime)
+                            };
+                        }
+
+                        return horario;
+                    }) || [];
+
+                return {
+                    Id: professional.Id,
+                    Nombre: fullName,
+                    Profesion: professional.VcProfession,
+                    Especializacion: professional.VcSpecialization || 'No especificada',
+                    Servicios: servicios, // ✅ Nueva estructura
+                    Horarios: horarios,
+                    Email: professional.VcEmail,
+                    Telefono: professional.VcPhone
+                };
+            });
+
+        } catch (error) {
+            if (error instanceof NotFoundException) {
+                throw error;
+            }
+
+            throw new BadRequestException(
+                [{
+                    code: 'ERROR_BUSQUEDA_PROFESIONALES',
+                    message: `Ha ocurrido un error al buscar profesionales: ${error.message || 'Error desconocido'}`,
+                    field: 'CompanyId'
+                }],
+                'Ha ocurrido un error al buscar profesionales'
+            );
+        }
+    }
 }
