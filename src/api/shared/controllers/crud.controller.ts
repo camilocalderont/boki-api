@@ -3,6 +3,7 @@ import { ICrudService } from '../interfaces/crud.interface';
 import { Schema } from 'joi';
 import { UseJoiValidationPipe } from '../utils/pipes/use-joi.pipe';
 import { ApiControllerResponse } from '../interfaces/api-response.interface';
+import { AllowApiKey } from '../decorators/allow-api-key.decorator';
 
 
 export abstract class BaseCrudController<T, CreateDto = any, UpdateDto = any> {
@@ -14,6 +15,7 @@ export abstract class BaseCrudController<T, CreateDto = any, UpdateDto = any> {
   ) { }
 
   @Post()
+  @AllowApiKey()
   @HttpCode(HttpStatus.CREATED)
   @UseJoiValidationPipe(instance => instance.createSchema)
   async create(@Body() createDto: CreateDto): Promise<ApiControllerResponse<T>> {
